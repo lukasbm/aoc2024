@@ -1,18 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- I did a dirty global install: `cabal install --lib regex-tdfa`
--- maybe regex-compat would have been better ....
+-- I did a dirty global install: `cabal install --lib regex-compat`
 import Data.List (intercalate)
-import Text.Regex.TDFA (AllTextMatches, getAllTextMatches, (=~))
+import Text.Regex (Regex, matchRegex, matchRegexAll, mkRegex)
 
-findAllOccurrences :: String -> String -> [String]
-findAllOccurrences pattern text = getAllTextMatches (text =~ pattern :: AllTextMatches [] String)
+findAllMatches :: Regex -> String -> [String]
+findAllMatches pattern text = case matchRegexAll pattern text of
+  Just (before, match, after, subs) -> subs ++ findAllMatches pattern after
+  Nothing -> []
 
--- pattern1 = "mul\\([0-9]{1,3},[0-9]{1,3}\\)"
-pattern1 = "mul\\(([0-9]{1,3}),([0-9]{1,3})\\)"
+parseMatches :: [String] -> [(Int, Int)]
+parseMatches [] = []
+parseMatches (x : y : rest) = (read x, read y) : parseMatches rest
+parseMatches _ = error "list contains uneven number of elements"
+
+patternEq = mkRegex "mul\\(([0-9]{1,3}),([0-9]{1,3})\\)"
 
 main :: IO ()
-main = readFile "test_part1.txt" >>= print . solve . intercalate "" . lines
+main = readFile "input.txt" >>= print . sum . solve . intercalate "" . lines
 
-solve :: String -> [String]
-solve text = findAllOccurrences pattern1 text
+solve :: String -> [Int]
+solve text = map (\(x, y) -> x * y) $ parseMatches $ findAllMatches patternEq text
