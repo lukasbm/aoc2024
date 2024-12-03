@@ -14,3 +14,8 @@ is the same as:
 ```haskell
 main = getLine >>= putStrLn >> main
 ```
+
+## Sources
+
+- <https://www.reddit.com/r/haskell/comments/181hwly/how_to_install_haskell_packageslibraries_globally/>
+- 
