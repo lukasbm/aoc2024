@@ -18,9 +18,7 @@ slidingWindow2 size@(nrow, ncol) func xss =
   [func (take nrow $ map (take ncol) (drop i xss)) | i <- [0 .. (rows xss - nrow)], j <- [0 .. (cols xss - ncol)]]
 
 main :: IO ()
-main = readFile "test_part2.txt" >>= print . sum . map b2i . slidingWindow2 (3, 3) xmas . lines
-
--- main = readFile "test_part2.txt" >>= print . slidingWindow2 (3, 3) id . lines
+main = readFile "input.txt" >>= print . sum . map b2i . slidingWindow2 (3, 3) xmas . lines
 
 xmas :: [[Char]] -> Bool
 -- xmas [[tl, t, tr], [ml, m, mr], [bl, b, br]]
@@ -30,4 +28,15 @@ xmas [['S', t, 'M'], [ml, 'A', mr], ['S', b, 'M']] = True -- Ms on right
 xmas [['S', t, 'S'], [ml, 'A', mr], ['M', b, 'M']] = True -- Ms on bot
 xmas _ = False
 
--- for test data: should only be 64 boolean values (64 applications of xmas func)!
+-- main = do  -- verifying xmas fn!
+--   print $ xmas ["S.S",".A.","M.M"]
+--   print $ xmas ["S.S",".A.","M.M"]
+--   print $ xmas ["S.S",".A.","M.M"]
+--   print $ xmas ["S.S",".A.","M.M"]
+--   print $ xmas ["M.S",".A.","M.S"]
+--   print $ xmas ["S.M",".AS","S.M"]
+--   print $ xmas ["MSM","MAA","SMS"]
+--   print $ xmas ["SMS","AA.","MSM"]
+--   print $ xmas ["M.S",".A.","M.S"]
+
+-- FIXME: TOO HIGH (4002)!
