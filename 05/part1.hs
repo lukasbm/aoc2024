@@ -23,7 +23,13 @@ main = do
   raw_text <- getContents
   let rules = map (bimap read (read . tail) . break (== '|')) $ takeWhile (/= "") (lines raw_text) :: [Rule]
   let updates = map (map (read :: String -> Int) . split ',') $ tail $ dropWhile (/= "") $ lines raw_text :: [[Int]]
-  print $ filter (correctlyOrdered rules []) updates
+
+  -- print $ filter (correctlyOrdered rules []) updates
+  -- test with test_part1.txt
+  -- print $ correctlyOrdered rules [97, 13, 75, 29, 47] [] -- should false!
+  -- print $ correctlyOrdered rules [75, 47, 61, 53, 29] [] -- should be true
+  -- print $ map (\x -> correctlyOrdered rules x []) updates -- should be T,T,T,F,F,F
+
   print $ sum $ map takeMiddle $ filter (correctlyOrdered rules []) updates
 
 correctlyOrdered :: [Rule] -> Update -> Update -> Bool
@@ -31,4 +37,6 @@ correctlyOrdered _ [] _ = True
 correctlyOrdered [] _ _ = True
 correctlyOrdered rules (u : us) processed =
   let relevantRules = filter (\(a, b) -> a == u) rules
-   in any ((`elem` processed) . snd) relevantRules && correctlyOrdered rules us (u : processed)
+   in all (\(a, b) -> b `notElem` processed) relevantRules && correctlyOrdered rules us (u : processed)
+
+-- FIXME: too high!
