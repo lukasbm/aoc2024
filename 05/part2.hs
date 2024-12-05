@@ -24,12 +24,6 @@ main = do
   let rules = map (bimap read (read . tail) . break (== '|')) $ takeWhile (/= "") (lines raw_text) :: [Rule]
   let updates = map (map (read :: String -> Int) . split ',') $ tail $ dropWhile (/= "") $ lines raw_text :: [[Int]]
 
-  -- test with test_part1.txt
-  -- print $ correctlyOrdered rules [97, 13, 75, 29, 47] [] -- should false!
-  -- print $ correctlyOrdered rules [75, 47, 61, 53, 29] [] -- should be true
-  -- print $ map (\x -> correctlyOrdered rules x []) updates -- should be T,T,T,F,F,F
-  -- print $ filter (\x -> correctlyOrdered rules x []) updates
-
   print $ sum $ map takeMiddle $ filter (\x -> correctlyOrdered rules x []) updates
 
 correctlyOrdered :: [Rule] -> Update -> Update -> Bool
