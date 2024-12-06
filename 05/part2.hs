@@ -26,7 +26,10 @@ main = do
   let rules = map (bimap read (read . tail) . break (== '|')) $ takeWhile (/= "") (lines raw_text) :: [Rule]
   let updates = map (map (read :: String -> Int) . split ',') $ tail $ dropWhile (/= "") $ lines raw_text :: [[Int]]
 
-  print $ sum $ map takeMiddle $ filter (\x -> correctlyOrdered rules x []) updates
+  -- print $ sum $ map takeMiddle $ filter (\x -> correctlyOrdered rules x []) updates
+  print $ correctlyOrdered rules [61, 13, 29] []
+  print $ sortUpdate rules [61, 13, 29]
+  -- FIXME: its too slow with the full set of rules!
 
 correctlyOrdered :: [Rule] -> Update -> Update -> Bool
 correctlyOrdered _ [] _ = True
@@ -42,13 +45,9 @@ hasPath rules a b = case find (\(x, y) -> x == a) rules of
   Nothing -> False
   where
     walk :: [Rule] -> Rule -> Int -> Bool
-    walk rules curr goal = True -- TODO: fixme
-
--- let start = find
--- let relevantRules = filter (\(x, y) -> x == a || y == b) rules
---  in False
--- \| isJust find (\(x, y) -> x == a && y == b) rules = True
--- \|
+    walk rules curr@(a, b) goal = case find (\(x, y) -> x == b) rules of
+      Just next@(c, d) -> (d == goal) || walk rules next goal
+      Nothing -> False
 
 sortUpdate :: [Rule] -> Update -> Update
 sortUpdate rules = sortBy comparePage
