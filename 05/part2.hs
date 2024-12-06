@@ -1,5 +1,6 @@
 import Data.Bifunctor (bimap)
-import Data.List (sortBy)
+import Data.List (find, sortBy)
+import Data.Maybe (isJust)
 
 type Rule = (Int, Int)
 
@@ -34,12 +35,33 @@ correctlyOrdered rules (u : us) processed =
   let relevantRules = filter (\(a, b) -> a == u) rules
    in all (\(a, b) -> b `notElem` processed) relevantRules && correctlyOrdered rules us (u : processed)
 
+-- need to find a path where its something like (a, x) -> (x,x) -> (x,b)   [tuples represent the rules here. They form a DAG]
+hasPath :: [Rule] -> Int -> Int -> Bool
+hasPath rules a b = case find (\(x, y) -> x == a) rules of
+  Just start@(x, y) -> (y == b) || walk rules start b
+  Nothing -> False
+  where
+    walk :: [Rule] -> Rule -> Int -> Bool
+    walk rules curr goal = True -- TODO: fixme
+
+-- let start = find
+-- let relevantRules = filter (\(x, y) -> x == a || y == b) rules
+--  in False
+-- \| isJust find (\(x, y) -> x == a && y == b) rules = True
+-- \|
+
 sortUpdate :: [Rule] -> Update -> Update
 sortUpdate rules = sortBy comparePage
   where
-    -- TODO: work here!
+    -- sorts two pages from an update given the rules
+    -- if there is a path from a to b -> then a LT b
+    -- a == b -> then A EQ b
+    -- if there is no path from a to b -> then a GT b
     comparePage :: Int -> Int -> Ordering
-    comparePage a b = GT -- need to find a path where its something like (a, x) -> (x,x) -> (x,b)   [tuples represent the rules here. They form a DAG]
+    comparePage a b
+      | a == b = EQ
+      | hasPath rules a b = LT
+      | otherwise = GT
 
 -- relevant for reordering [61,13,29]?
 -- 47|61
