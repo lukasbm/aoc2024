@@ -6,15 +6,20 @@ type Rule = (Int, Int)
 
 type Update = [Int]
 
+-- split a string at a char
+-- drops the char from the results!
 split :: Char -> String -> [String]
 split _ [] = []
 split sep x =
   let (a, b) = break (== sep) x
    in a : if null b then [] else split sep (tail b)
 
+-- returns overlapped tuples
+-- e.g. overlaps [1..4] = [(1,2), (2,3), (3,4)]
 overlaps :: [a] -> [(a, a)]
 overlaps x = zip x (tail x)
 
+-- take the middle element of an odd-sized list
 takeMiddle :: [a] -> a
 takeMiddle [] = error "needs to have at least 1 elem"
 takeMiddle [x] = x
@@ -26,10 +31,13 @@ main = do
   let rules = map (bimap read (read . tail) . break (== '|')) $ takeWhile (/= "") (lines raw_text) :: [Rule]
   let updates = map (map (read :: String -> Int) . split ',') $ tail $ dropWhile (/= "") $ lines raw_text :: [[Int]]
 
-  -- print $ sum $ map takeMiddle $ filter (\x -> correctlyOrdered rules x []) updates
-  print $ correctlyOrdered rules [61, 13, 29] []
-  print $ sortUpdate rules [61, 13, 29]
-  print $ sortUpdate rules [97, 13, 75, 29, 47]
+  -- print $ correctlyOrdered rules [61, 13, 29] []
+  -- print $ sortUpdate rules [61, 13, 29]
+  -- print $ sortUpdate rules [97, 13, 75, 29, 47]
+
+  -- FIXME: 6579 is too high!!
+  print $ filter (\x -> not $ correctlyOrdered rules x []) updates
+  print $ sum $ map (takeMiddle . sortUpdate rules) $ filter (\x -> not $ correctlyOrdered rules x []) updates
 
 correctlyOrdered :: [Rule] -> Update -> Update -> Bool
 correctlyOrdered _ [] _ = True
