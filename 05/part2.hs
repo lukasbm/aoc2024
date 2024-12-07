@@ -1,5 +1,5 @@
 import Data.Bifunctor (bimap)
-import Data.List (find, sortBy)
+import Data.List (delete, find, sortBy)
 import Data.Maybe (isJust)
 
 type Rule = (Int, Int)
@@ -29,7 +29,6 @@ main = do
   -- print $ sum $ map takeMiddle $ filter (\x -> correctlyOrdered rules x []) updates
   print $ correctlyOrdered rules [61, 13, 29] []
   print $ sortUpdate rules [61, 13, 29]
-  -- FIXME: its too slow with the full set of rules!
 
 correctlyOrdered :: [Rule] -> Update -> Update -> Bool
 correctlyOrdered _ [] _ = True
@@ -40,14 +39,14 @@ correctlyOrdered rules (u : us) processed =
 
 -- need to find a path where its something like (a, x) -> (x,x) -> (x,b)   [tuples represent the rules here. They form a DAG]
 hasPath :: [Rule] -> Int -> Int -> Bool
-hasPath rules a b = case find (\(x, y) -> x == a) rules of
-  Just start@(x, y) -> (y == b) || walk rules start b
-  Nothing -> False
+hasPath rules a b
+  | isJust $ find (\(x, y) -> x == a && y == b) rules = True -- easy base case, no path needed
+  | otherwise = walk rules a
   where
-    walk :: [Rule] -> Rule -> Int -> Bool
-    walk rules curr@(a, b) goal = case find (\(x, y) -> x == b) rules of
-      Just next@(c, d) -> (d == goal) || walk rules next goal
-      Nothing -> False
+    walk :: [Rule] -> Int -> Bool
+    walk rules startPage =
+      let relevantRules = filter (\(x, y) -> x == startPage) rules
+       in any (\(x, y) -> walk rules y) relevantRules -- FIXME: need end condition!! (b) -- before the any!
 
 sortUpdate :: [Rule] -> Update -> Update
 sortUpdate rules = sortBy comparePage
