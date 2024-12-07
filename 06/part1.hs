@@ -3,6 +3,28 @@
 import Data.List (find, intercalate)
 import Data.Maybe (isJust, isNothing)
 
+cols :: [[a]] -> Int
+cols xss = length (head xss)
+
+b2i :: Bool -> Int
+b2i False = 0
+b2i True = 1
+
+rows :: [[a]] -> Int
+rows = length
+
+chunked :: Int -> [a] -> [[a]]
+chunked _ [] = []
+chunked n xs = take n xs : chunked n (drop n xs)
+
+-- | 'slidingWindow2' applies a function to every subgrid of a given size within a grid.
+-- The first parameter is the size of the subgrid (number of rows and columns).
+-- The second parameter is the function to apply to each subgrid.
+-- The third parameter is the grid to process.
+slidingWindow2 :: (Int, Int) -> ([[a]] -> b) -> [[a]] -> [b]
+slidingWindow2 size@(nrow, ncol) func xss =
+  [func (take nrow $ map (take ncol . drop j) (drop i xss)) | i <- [0 .. (rows xss - nrow)], j <- [0 .. (cols xss - ncol)]]
+
 data Object = GuardLeft | GuardRight | GuardUp | GuardDown | Free | Obstacle | Patrolled deriving (Eq)
 
 instance Show Object where
@@ -22,9 +44,6 @@ instance Show Grid where
 
 -- instance Foldable Grid where
 --   foldMap f (Grid rows) = foldMap (foldMap f) rows
-
-withIndices :: Grid -> [(Int, Int, Object)]
-withIndices (Grid arr) = [(row, col, arr !! row !! col) | row <- [0 .. length arr - 1], col <- [0 .. length (head arr) - 1]]
 
 parseObject :: Char -> Object
 parseObject '.' = Free
@@ -58,19 +77,11 @@ leavingArea (Grid g) =
   let borders = head g ++ last g ++ concatMap (\row -> [head row, last row]) (init (tail g))
    in isJust $ find isGuard borders
 
--- returns the neigh
-neighbors :: [[(Int, Int, a)]] -> (Int, Int, a) -> a -> [a]
-neighbors grid needle@(row, col, val) filler = [val]
-  where
-    safeIndex y x = if x < 0 || y < 0 || x >= length grid || y >= length (grid !! 0) then '.' else grid !! y !! x
+-- looks at the neighborhood (3x3 grid) and updates the center accordingly
+evaluateNeighborhood :: [[Object]] -> Object
+evaluateNeighborhood idk = head $ head idk
 
-updateState :: [[(Int, Int, Object)]] -> (Int, Int, Object) -> Grid
-updateState 
-
--- TODO: the hardest part?
 step :: Grid -> Grid
-step grid =
-  let indexedGrid = withIndices grid
-    in case find (\(_,_,v) -> isGuard v) indexedGrid of
-      Just guard =  updateState 
-      Nothing = error "fixme"
+step (Grid grid) =
+  let updatedInner = chunked (cols grid - 2) $ slidingWindow2 (3, 3) evaluateNeighborhood grid
+   in Grid $ [head grid] ++ zipWith (\innerRow fullRow -> [head fullRow] ++ innerRow ++ [last fullRow]) updatedInner grid ++ [last grid]
