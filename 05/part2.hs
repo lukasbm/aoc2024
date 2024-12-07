@@ -35,7 +35,7 @@ main = do
   -- print $ sortUpdate rules [61, 13, 29]
   -- print $ sortUpdate rules [97, 13, 75, 29, 47]
 
-  -- FIXME: 6579 is too high!!
+  -- FIXME: 6479 is too high! 6000 is too small!
   print $ filter (\x -> not $ correctlyOrdered rules x []) updates
   print $ sum $ map (takeMiddle . sortUpdate rules) $ filter (\x -> not $ correctlyOrdered rules x []) updates
 
