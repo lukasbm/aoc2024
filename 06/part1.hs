@@ -77,11 +77,30 @@ leavingArea (Grid g) =
   let borders = head g ++ last g ++ concatMap (\row -> [head row, last row]) (init (tail g))
    in isJust $ find isGuard borders
 
+
 -- looks at the neighborhood (3x3 grid) and updates the center accordingly
 evaluateNeighborhood :: [[Object]] -> Object
-evaluateNeighborhood idk = head $ head idk
+-- evaluateNeighborhood neighborhood@[[tl, t, tr], [ml, m, mr], [bl, b, br]]
+
+
+
+-- need to ignore difference between Patrolled and Free!
+-- three moves each, in this case 
+-- Facing top, moving up
+-- Facing Top, setting mark
+-- rotating from up to right
+
+-- works for all other directions by rotating it!
+
+
 
 step :: Grid -> Grid
 step (Grid grid) =
   let updatedInner = chunked (cols grid - 2) $ slidingWindow2 (3, 3) evaluateNeighborhood grid
    in Grid $ [head grid] ++ zipWith (\innerRow fullRow -> [head fullRow] ++ innerRow ++ [last fullRow]) updatedInner grid ++ [last grid]
+
+
+-- NOTE: number of distinct positions is just counting the X symbols!
+
+-- NOTE: at the end, with sliding windows, the guard will disappear as soon as it steps into the border.
+-- but then leavingArea will trigger and all of it stops anyway
