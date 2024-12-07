@@ -12,10 +12,13 @@ cols xss = length (head xss)
 rows :: [[a]] -> Int
 rows = length
 
--- 2 Dimension sliding window
+-- | 'slidingWindow2' applies a function to every subgrid of a given size within a grid.
+-- The first parameter is the size of the subgrid (number of rows and columns).
+-- The second parameter is the function to apply to each subgrid.
+-- The third parameter is the grid to process.
 slidingWindow2 :: (Int, Int) -> ([[a]] -> b) -> [[a]] -> [b]
 slidingWindow2 size@(nrow, ncol) func xss =
-  [func (take nrow $ map (take ncol) (drop i xss)) | i <- [0 .. (rows xss - nrow)], j <- [0 .. (cols xss - ncol)]]
+  [func (take nrow $ map (take ncol . drop j) (drop i xss)) | i <- [0 .. (rows xss - nrow)], j <- [0 .. (cols xss - ncol)]]
 
 main :: IO ()
 main = readFile "input.txt" >>= print . sum . map b2i . slidingWindow2 (3, 3) xmas . lines
@@ -38,5 +41,3 @@ xmas _ = False
 --   print $ xmas ["MSM","MAA","SMS"]
 --   print $ xmas ["SMS","AA.","MSM"]
 --   print $ xmas ["M.S",".A.","M.S"]
-
--- FIXME: TOO HIGH (4002)!
