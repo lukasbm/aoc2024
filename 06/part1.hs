@@ -23,6 +23,9 @@ instance Show Grid where
 -- instance Foldable Grid where
 --   foldMap f (Grid rows) = foldMap (foldMap f) rows
 
+withIndices :: Grid -> [(Int, Int, Object)]
+withIndices (Grid arr) = [(row, col, arr !! row !! col) | row <- [0 .. length arr - 1], col <- [0 .. length (head arr) - 1]]
+
 parseObject :: Char -> Object
 parseObject '.' = Free
 parseObject '#' = Obstacle
@@ -55,7 +58,19 @@ leavingArea (Grid g) =
   let borders = head g ++ last g ++ concatMap (\row -> [head row, last row]) (init (tail g))
    in isJust $ find isGuard borders
 
+-- returns the neigh
+neighbors :: [[(Int, Int, a)]] -> (Int, Int, a) -> a -> [a]
+neighbors grid needle@(row, col, val) filler = [val]
+  where
+    safeIndex y x = if x < 0 || y < 0 || x >= length grid || y >= length (grid !! 0) then '.' else grid !! y !! x
+
+updateState :: [[(Int, Int, Object)]] -> (Int, Int, Object) -> Grid
+updateState 
 
 -- TODO: the hardest part?
 step :: Grid -> Grid
-step g = g
+step grid =
+  let indexedGrid = withIndices grid
+    in case find (\(_,_,v) -> isGuard v) indexedGrid of
+      Just guard =  updateState 
+      Nothing = error "fixme"
