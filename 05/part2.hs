@@ -29,6 +29,7 @@ main = do
   -- print $ sum $ map takeMiddle $ filter (\x -> correctlyOrdered rules x []) updates
   print $ correctlyOrdered rules [61, 13, 29] []
   print $ sortUpdate rules [61, 13, 29]
+  print $ sortUpdate rules [97, 13, 75, 29, 47]
 
 correctlyOrdered :: [Rule] -> Update -> Update -> Bool
 correctlyOrdered _ [] _ = True
@@ -39,14 +40,12 @@ correctlyOrdered rules (u : us) processed =
 
 -- need to find a path where its something like (a, x) -> (x,x) -> (x,b)   [tuples represent the rules here. They form a DAG]
 hasPath :: [Rule] -> Int -> Int -> Bool
-hasPath rules a b
-  | isJust $ find (\(x, y) -> x == a && y == b) rules = True -- easy base case, no path needed
-  | otherwise = walk rules a
+hasPath rules a b = walk rules a
   where
     walk :: [Rule] -> Int -> Bool
     walk rules startPage =
       let relevantRules = filter (\(x, y) -> x == startPage) rules
-       in any (\(x, y) -> walk rules y) relevantRules -- FIXME: need end condition!! (b) -- before the any!
+       in any (\(x, y) -> y == b) relevantRules || any (\(x, y) -> walk rules y) relevantRules -- first is checking if we reached the goal, else is breath search
 
 sortUpdate :: [Rule] -> Update -> Update
 sortUpdate rules = sortBy comparePage
@@ -60,23 +59,3 @@ sortUpdate rules = sortBy comparePage
       | a == b = EQ
       | hasPath rules a b = LT
       | otherwise = GT
-
--- relevant for reordering [61,13,29]?
--- 47|61
--- 75|61
--- 61|53
--- 61|29
--- 97|61
--- 61|13
--- 75|13
--- 53|13
--- 47|13
--- 29|13
--- 97|13
--- 97|29
--- 53|29
--- 75|29
--- 47|29
--- NOTE: the rules always form a DAG!!! in this case its
--- 46 -> 61 -> 53 -> 13 or 75 -> 29 -> 13 ....
--- 13 is the final element!
