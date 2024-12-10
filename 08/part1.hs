@@ -32,25 +32,19 @@ main = do
   let grid = zip [(r, c) | r <- [0 .. (rows grid_raw - 1)], c <- [0 .. (cols grid_raw - 1)]] (concat grid_raw) :: Grid
   let unique_frequencies = nub $ map (\(Antenna x) -> x) $ filter (\x -> case x of Antenna f -> True; _ -> False) (concat grid_raw)
   let grid_size = (rows grid_raw, cols grid_raw)
+  -- for each frequency there will be n^2 - n pairs (we include both directions)
   let pairs = concatMap (makePairs grid) unique_frequencies
 
-  print $ unique_frequencies
-  print $ length pairs
-
-  -- print $ grid_size
-  -- print $ head pairs
-  -- print $ evalPair grid_size (head pairs)
-
-  print $ sum $ map (b2i . evalPair grid_size) pairs
+  print $ length $ nub $ filter (\x -> case x of Just coord -> True; Nothing -> False) $ map (evalPair grid_size) pairs
 
 -- eval pair while overshooting in one direction (a -> b -> antinode)
 -- we want a + 2l = antinode and naturally a + l = b
 -- pairs exist in both directions so (b -> a -> antinode) is evaluated in another call
-evalPair :: Coord -> (Entry, Entry) -> Bool
+evalPair :: Coord -> (Entry, Entry) -> Maybe Coord
 evalPair grid_size ((a, _), (b, _)) =
   let l = linearSub a b
       antinode = linearAdd b l
-   in linearAdd a (linearAdd l l) == antinode && linearAdd a l == b && inBounds grid_size antinode
+   in if linearAdd a (linearAdd l l) == antinode && linearAdd a l == b && inBounds grid_size antinode then Just antinode else Nothing
 
 -- given grid size, check if point is in bounds
 inBounds :: Coord -> Coord -> Bool
