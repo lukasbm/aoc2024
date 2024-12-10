@@ -18,6 +18,6 @@ def execute_code():
 
 # time it
 # FIXME: there is a slight overhead, due to the subprocess call
-res = timeit.repeat(execute_code, repeat=10, number=1)
+res = timeit.repeat(execute_code, repeat=5, number=1)
 
 print(sum(res) / len(res))

@@ -1,7 +1,4 @@
-FROM haskell:9.4.8-slim
-
-# https://stackoverflow.com/questions/72376341/haskell-ghc-package-environment
-RUN cabal update && cabal install --force-reinstalls --lib array adjunctions comonad directory parsec mtl containers regex-compat regex-tdfa split
+FROM haskell:9.4.8
 
 RUN apt-get update && apt-get install -y python3
 
@@ -14,5 +11,9 @@ COPY aoc-runner.py /app/aoc-runner.py
 USER aoc
 
 WORKDIR /app
+
+# NOTE: these packages are install in aoc user space, so they are not available to the root user
+# https://stackoverflow.com/questions/72376341/haskell-ghc-package-environment
+RUN cabal update && cabal install --lib array adjunctions comonad directory parsec mtl containers split regex-compat regex-tdfa
 
 ENTRYPOINT ["python3", "aoc-runner.py"]
