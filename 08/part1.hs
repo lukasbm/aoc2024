@@ -21,6 +21,10 @@ rows = length
 cols :: [[a]] -> Int
 cols x = length (head x)
 
+b2i :: Bool -> Int
+b2i False = 0
+b2i True = 1
+
 main = do
   args <- getArgs
   raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
@@ -30,13 +34,14 @@ main = do
   let grid_size = (rows grid_raw, cols grid_raw)
   let pairs = concatMap (makePairs grid) unique_frequencies
 
-  print $ evalPair grid_size (head pairs)
-  print $ "hi"
+  print $ unique_frequencies
+  print $ length pairs
 
--- print $ grid
--- print $ map (\(a, b) -> (fst a, fst b)) $ pairs grid '0'
+  -- print $ grid_size
+  -- print $ head pairs
+  -- print $ evalPair grid_size (head pairs)
 
--- print $ map (uncurry linearDiff) $ pairs grid '0'
+  print $ sum $ map (b2i . evalPair grid_size) pairs
 
 -- eval pair while overshooting in one direction (a -> b -> antinode)
 -- we want a + 2l = antinode and naturally a + l = b
@@ -45,7 +50,7 @@ evalPair :: Coord -> (Entry, Entry) -> Bool
 evalPair grid_size ((a, _), (b, _)) =
   let l = linearSub a b
       antinode = linearAdd b l
-   in linearAdd a (linearAdd l l) == b && inBounds grid_size antinode
+   in linearAdd a (linearAdd l l) == antinode && linearAdd a l == b && inBounds grid_size antinode
 
 -- given grid size, check if point is in bounds
 inBounds :: Coord -> Coord -> Bool
