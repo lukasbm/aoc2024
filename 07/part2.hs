@@ -18,6 +18,7 @@ main = do
 eval :: Equation -> Bool
 eval (test, []) = True
 eval (test, [a]) = a == test
-eval (test, a : b : xs) = eval (test, a * b : xs) || eval (test, a + b : xs)
-
--- i think this can be represented in a comonad or zipper?
+eval (test, a : b : xs) = eval (test, a * b : xs) || eval (test, a + b : xs) || eval (test, a `intjoin` b : xs)
+  where
+    intjoin :: Int -> Int -> Int
+    intjoin a b = read (show a <> show b)
