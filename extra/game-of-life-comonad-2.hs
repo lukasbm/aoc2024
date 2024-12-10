@@ -3,7 +3,7 @@
 -- cabal install --lib vector
 -- cabal install --lib comonad
 -- cabal install --lib distributive
--- cabal install --lib representable-functors
+-- cabal install --lib adjunctions
 
 import Control.Comonad (Comonad (..))
 import Control.Comonad.Representable.Store (Store (..), StoreT (..), experiment, store)
