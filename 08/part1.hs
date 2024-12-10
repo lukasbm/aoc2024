@@ -23,6 +23,7 @@ main = do
   let grid = zip [(r, c) | r <- [0 .. (rows grid_raw - 1)], c <- [0 .. (cols grid_raw - 1)]] (concat grid_raw) :: Grid
   -- print $ grid
   -- print $ map (\(a, b) -> (fst a, fst b)) $ pairs grid '0'
+  
   print $ map (uncurry linearDiff) $ pairs grid '0'
 
 linearDiff :: Entry -> Entry -> (Int, Int)
