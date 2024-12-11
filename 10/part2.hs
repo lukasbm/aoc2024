@@ -31,27 +31,20 @@ getNeighbors grid (i, j) =
 
 -- trailhead always at height 0
 -- grid -> start/curr -> destinations
-findPath :: Grid -> Coord -> [Coord]
-findPath grid pos =
+walkPaths :: Grid -> Coord -> [Coord]
+walkPaths grid pos =
   let validMoves = filter (\x -> grid ! x == grid ! pos + 1) $ getNeighbors grid pos
-   in if grid ! pos == 9 then [pos] else concatMap (findPath grid) validMoves
+   in if grid ! pos == 9 then [pos] else concatMap (walkPaths grid) validMoves
 
 main = do
   args <- getArgs
   raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let grid = toUArray $ (map . map) (read . pure :: Char -> Int) $ lines raw_text :: Grid
 
-  -- get trailheads
-  -- print $ findIndicesByValue2D 0 $ toUArray grid
-
-  -- print $ grid ! (1, 4)
-  -- print $ getNeighbors grid (1, 4)
-  -- print $ findPath grid (1, 4)
-
   let trailheads = findIndicesByValue2D 0 grid
   -- print $ length trailheads
 
   -- print $ map (findPath grid) trailheads
 
-  -- count unique destinations per trailhead and sum up
-  print $ sum $ map (length . nub . findPath grid) trailheads
+  -- count destinations per trailhead and sum up
+  print $ sum $ map (length . walkPaths grid) trailheads
