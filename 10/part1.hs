@@ -1,5 +1,6 @@
 import Data.Array.IArray
 import Data.Array.Unboxed
+import Data.List (nub)
 import System.Environment (getArgs)
 
 type Coord = (Int, Int)
@@ -29,11 +30,11 @@ getNeighbors grid (i, j) =
    in filter (\(x, y) -> x >= minI && x <= maxI && y >= minJ && y <= maxJ) potentialNeighbors
 
 -- trailhead always at height 0
--- grid -> start/curr -> score
-findPath :: Grid -> Coord -> Int
+-- grid -> start/curr -> destination
+findPath :: Grid -> Coord -> [Coord]
 findPath grid pos =
   let validMoves = filter (\x -> grid ! x == grid ! pos + 1) $ getNeighbors grid pos
-   in if grid ! pos == 9 then 1 else sum $ map (findPath grid) validMoves
+   in if grid ! pos == 9 then [pos] else concatMap (findPath grid) validMoves
 
 main = do
   args <- getArgs
@@ -48,7 +49,7 @@ main = do
   -- print $ findPath grid (1, 4)
 
   let trailheads = findIndicesByValue2D 0 grid
-  print $ length trailheads
+  -- print $ length trailheads
 
-  -- print $ sum $ map (findPath grid) trailheads
-  print $ map (findPath grid) trailheads
+  -- print $ map (findPath grid) trailheads
+  print $ sum $ map (length . nub . findPath grid) trailheads
