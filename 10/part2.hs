@@ -41,6 +41,13 @@ main = do
   raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let grid = toUArray $ (map . map) (read . pure :: Char -> Int) $ lines raw_text :: Grid
 
+  -- get trailheads
+  -- print $ findIndicesByValue2D 0 $ toUArray grid
+
+  -- print $ grid ! (1, 4)
+  -- print $ getNeighbors grid (1, 4)
+  -- print $ findPath grid (1, 4)
+
   let trailheads = findIndicesByValue2D 0 grid
   -- print $ length trailheads
 
