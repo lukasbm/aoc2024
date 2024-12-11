@@ -1,34 +1,31 @@
 import Data.Bits (Bits (xor))
+import Data.Maybe (fromMaybe)
 import System.Environment (getArgs)
 
 step :: [Int] -> [Int]
 step = foldl (\acc x -> acc ++ applyRules x) []
   where
     applyRules :: Int -> [Int]
-    applyRules x = do
-      let x1 = firstRule x
-      if x1 /= [x]
-        then x1
-        else do
-          let x2 = secondRule x
-          if x2 /= [x]
-            then x2
-            else thirdRule x
+    applyRules x = case firstRule x of
+      Just x1 -> x1
+      Nothing -> case secondRule x of
+        Just x2 -> x2
+        Nothing -> fromMaybe [x] (thirdRule x)
 
-    firstRule 0 = [1]
-    firstRule x = [x]
+    firstRule 0 = Just [1]
+    firstRule x = Nothing
 
     secondRule x
-      | even nd = [read l, read r]
-      | otherwise = [x]
+      | even nd = Just [read l, read r]
+      | otherwise = Nothing
       where
         nd = (length . show) x
         (l, r) = splitAt (nd `div` 2) (show x)
 
-    thirdRule x = [x * 2024]
+    thirdRule x = Just [x * 2024]
 
 main = do
   args <- getArgs
   raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let stones = map read $ words raw_text :: [Int]
-  print $ length $ last $ take 26 $ iterate step stones -- needs to be 26 to get after 25 iterations
+  print $ (!! 25) $ iterate step stones -- needs to be 26 to get after 25 iterations
