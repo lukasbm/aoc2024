@@ -1,7 +1,7 @@
 import System.Environment (getArgs)
 import Prelude hiding (id)
 
-data Block = Free {size :: Int} | File {id :: Int, size :: Int} deriving (Eq)
+data Block = Free {size :: Int} | File {id :: Int, size :: Int} deriving (Eq, Show)
 
 -- should have used a datatype, but here we represent free with -1
 blocksToSectors :: [Block] -> [Int]
@@ -17,6 +17,30 @@ parse _ _ [] = []
 parse True id (s : xs) = File id s : parse False (id + 1) xs
 parse False id (s : xs) = Free s : parse True id xs
 
+-- checks if the block could actually be moved
+-- assumed the block is still present in the full list!
+spaceOnLeft :: [Block] -> Block -> Bool
+spaceOnLeft xs x@(File xid xsize) =
+  let left = takeWhile (/= x) xs
+   in any fits left
+  where
+    fits (File yid ysize) = False
+    fits (Free ysize) = ysize >= xsize
+
+replace :: (Eq a) => a -> a -> [a] -> [a]
+replace a b = map $ \c -> if c == a then b else c
+
+-- finds the first-best spot to place it in.
+replaceLeft :: [Block] -> Block -> [Block]
+replaceLeft [] _ = []
+replaceLeft [a] _ = [a]
+replaceLeft (x@(Free xsize) : xs) y@(File yid ysize) =
+  if xsize >= ysize
+    then y : Free (xsize - ysize) : replace y (Free ysize) xs
+    else x : replaceLeft xs y
+replaceLeft (x : xs) y = x : replaceLeft xs y
+
+-- NOTE: in this exercise i CAN NOT build the final output left to right!!!
 defrag :: [Block] -> [Block]
 defrag [] = []
 defrag [x] = [x]
@@ -25,16 +49,10 @@ defrag xs =
       weaving = reverse $ filter (\x -> case x of Free _ -> False; File _ _ -> True) xs
    in helper xs weaving
   where
-    -- list to process, weaving
-    helper :: [Block] -> [Block] -> [Block]
-    helper [] wss = []
-    helper xss [] = xss -- actually done (happy case)
-    -- if i weave something i need to remove, it needs to be removed from the end of xs and replaced with free!
-    helper (Free xsize : xs) (w@(File wid wsize) : ws) =
-      if wsize <= xsize -- check if can weave
-        then [w] ++ helper (Free (xsize - wsize) : init xs) ws ++ [Free wsize] -- actually replace!
-        else Free xsize : helper xs ws -- can't replace, but need to make sure the block stays where it
-    helper (x@(File id xsize) : xs) wss = x : helper xs wss -- in case a block in the regular list is present, this is one element we don't need to weave (remove it from the end of wss)
+    helper xs (w@(File wid wsize) : ws) =
+      if spaceOnLeft xs w
+        then helper (replaceLeft xs w) ws
+        else helper xs ws
 
 checksum :: [Int] -> Int
 checksum xs =
@@ -45,6 +63,11 @@ main = do
   args <- getArgs
   raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let num = parse True 0 $ map (read . pure :: Char -> Int) raw_text
+
+  -- print $ take 4 $ num
+  -- let x = take 4 num
+  -- print $ replaceLeft x (x !! 2)
+
   print $ blocksToSectors $ num
   print $ blocksToSectors $ defrag num
   print $ checksum $ blocksToSectors $ defrag num
