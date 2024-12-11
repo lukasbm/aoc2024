@@ -3,10 +3,10 @@ import Prelude hiding (id)
 
 data Block = Free {size :: Int} | File {id :: Int, size :: Int} deriving (Eq, Show)
 
--- should have used a datatype, but here we represent free with -1
+-- should have used a datatype, but here we represent free with 0
 blocksToSectors :: [Block] -> [Int]
 blocksToSectors [] = []
-blocksToSectors (Free size : xs) = replicate size (-1) ++ blocksToSectors xs
+blocksToSectors (Free size : xs) = replicate size 0 ++ blocksToSectors xs
 blocksToSectors (File id size : xs) = replicate size id ++ blocksToSectors xs
 
 -- bool = True means parse File, false means parse Free
@@ -49,6 +49,7 @@ defrag xs =
       weaving = reverse $ filter (\x -> case x of Free _ -> False; File _ _ -> True) xs
    in helper xs weaving
   where
+    helper xs [] = xs
     helper xs (w@(File wid wsize) : ws) =
       if spaceOnLeft xs w
         then helper (replaceLeft xs w) ws
@@ -64,10 +65,6 @@ main = do
   raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let num = parse True 0 $ map (read . pure :: Char -> Int) raw_text
 
-  -- print $ take 4 $ num
-  -- let x = take 4 num
-  -- print $ replaceLeft x (x !! 2)
-
-  print $ blocksToSectors $ num
-  print $ blocksToSectors $ defrag num
+  -- print $ blocksToSectors $ num
+  -- print $ blocksToSectors $ defrag num
   print $ checksum $ blocksToSectors $ defrag num
