@@ -1,31 +1,35 @@
 import Data.Bits (Bits (xor))
+import Data.IntMap qualified as Map
 import Data.Maybe (fromMaybe)
 import System.Environment (getArgs)
 
-step :: [Int] -> [Int]
-step = foldl (\acc x -> acc ++ applyRules x) []
+applyRules :: Int -> [Int]
+applyRules x
+  | x == 0 = [1]
+  | even pow = let (a, b) = x `divMod` (10 ^ (pow `div` 2)) in [a, b]
+  | otherwise = [x * 2024]
   where
-    applyRules :: Int -> [Int]
-    applyRules x = case firstRule x of
-      Just x1 -> x1
-      Nothing -> case secondRule x of
-        Just x2 -> x2
-        Nothing -> fromMaybe [x] (thirdRule x)
+    -- pow is the nearest power of then so: pow 25000 = [1,10,100,1000,10000]
+    pow = length . takeWhile (<= x) $ iterate (* 10) 1
 
-    firstRule 0 = Just [1]
-    firstRule x = Nothing
+frequency :: [Int] -> Map.IntMap Int
+frequency = Map.fromListWith (+) . map (,1)
 
-    secondRule x
-      | even nd = Just [read l, read r]
-      | otherwise = Nothing
-      where
-        nd = (length . show) x
-        (l, r) = splitAt (nd `div` 2) (show x)
-
-    thirdRule x = Just [x * 2024]
+-- essentially apply rules to every key in the map, then unites the maps back together
+-- lets say the tuple (x,n) is (10,3).
+-- we apply rules on x: [1 ,0]
+-- turn back to map: (1,1)(0,1)
+-- but we had three 10s initially so multiply all values by n using fmap
+-- then unite using same way to handle conflicts when joining as in fromList
+stepMemo :: Map.IntMap Int -> Map.IntMap Int
+stepMemo xm = Map.unionsWith (+) [(* n) <$> frequency (applyRules x) | (x, n) <- Map.toList xm]
 
 main = do
   args <- getArgs
   raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let stones = map read $ words raw_text :: [Int]
-  print $ (!! 25) $ iterate step stones -- needs to be 26 to get after 25 iterations
+  -- maps input to the amount of numbers it will split to
+  -- the with part is the operation (+) to be executed on a key conflict.
+  let stones_map = frequency stones :: Map.IntMap Int
+
+  print $ sum $ map snd $ Map.toList $ (!! 25) $ iterate stepMemo stones_map
