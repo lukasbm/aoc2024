@@ -2,7 +2,9 @@ import Data.Array.IArray
 import Data.Array.Unboxed
 import System.Environment (getArgs)
 
-type Grid = UArray (Int, Int) Int
+type Coord = (Int, Int)
+
+type Grid = UArray Coord Int
 
 -- Convert 2D list to UArray
 toUArray :: [[Int]] -> Grid
@@ -20,10 +22,33 @@ toUArray xs = array bounds elements
 findIndicesByValue2D :: (Eq a, IArray UArray a) => a -> UArray (Int, Int) a -> [(Int, Int)]
 findIndicesByValue2D value arr = [idx | (idx, val) <- assocs arr, val == value]
 
+getNeighbors :: Grid -> Coord -> [Coord]
+getNeighbors grid (i, j) =
+  let ((minI, minJ), (maxI, maxJ)) = bounds grid
+      potentialNeighbors = [(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]
+   in filter (\(x, y) -> x >= minI && x <= maxI && y >= minJ && y <= maxJ) potentialNeighbors
+
 -- trailhead always at height 0
+-- grid -> start/curr -> score
+findPath :: Grid -> Coord -> Int
+findPath grid pos =
+  let validMoves = filter (\x -> grid ! x == grid ! pos + 1) $ getNeighbors grid pos
+   in if grid ! pos == 9 then 1 else sum $ map (findPath grid) validMoves
 
 main = do
   args <- getArgs
   raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
-  let grid = (map . map) (read . pure :: Char -> Int) $ lines raw_text :: [[Int]]
-  print $ toUArray grid
+  let grid = toUArray $ (map . map) (read . pure :: Char -> Int) $ lines raw_text :: Grid
+
+  -- get trailheads
+  -- print $ findIndicesByValue2D 0 $ toUArray grid
+
+  -- print $ grid ! (1, 4)
+  -- print $ getNeighbors grid (1, 4)
+  -- print $ findPath grid (1, 4)
+
+  let trailheads = findIndicesByValue2D 0 grid
+  print $ length trailheads
+
+  -- print $ sum $ map (findPath grid) trailheads
+  print $ map (findPath grid) trailheads
