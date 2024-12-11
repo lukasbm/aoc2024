@@ -27,3 +27,4 @@ Maybe use packages like `pipes` or `conduit`
 - <https://wiki.haskell.org/Regular_expressions>
 - <https://wjwh.eu/posts/2022-11-30-haskell-aoc-tricks.html>
 - <https://blog.jle.im/entry/io-monad-considered-harmful.html>
+- <https://github.com/mstksg/advent-of-code/wiki/Reflections-2024>
