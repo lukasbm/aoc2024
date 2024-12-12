@@ -1,8 +1,11 @@
+import System.Environment (getArgs)
+
 parseReport :: [String] -> [Int]
 parseReport = map read
 
 main = do
-  raw_txt <- readFile "input.txt"
+  args <- getArgs
+  raw_txt <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let reports = map (parseReport . words) $ lines raw_txt
   print $ foldl (\acc p -> (if p then acc + 1 else acc)) 0 $ map evaluateReport reports
 

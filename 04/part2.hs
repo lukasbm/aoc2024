@@ -1,5 +1,6 @@
 import Data.List (find, nub, transpose)
 import Data.Maybe (fromMaybe)
+import System.Environment (getArgs)
 import Prelude hiding (Left, Right)
 
 b2i :: Bool -> Int
@@ -21,7 +22,10 @@ slidingWindow2 size@(nrow, ncol) func xss =
   [func (take nrow $ map (take ncol . drop j) (drop i xss)) | i <- [0 .. (rows xss - nrow)], j <- [0 .. (cols xss - ncol)]]
 
 main :: IO ()
-main = readFile "input.txt" >>= print . sum . map b2i . slidingWindow2 (3, 3) xmas . lines
+main = do
+  args <- getArgs
+  raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
+  print $ sum $ map b2i $ slidingWindow2 (3, 3) xmas $ lines raw_text
 
 xmas :: [[Char]] -> Bool
 -- xmas [[tl, t, tr], [ml, m, mr], [bl, b, br]]

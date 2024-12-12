@@ -1,6 +1,7 @@
 import Data.Bifunctor (bimap)
 import Data.List (delete, find, sortBy)
 import Data.Maybe (isJust)
+import System.Environment (getArgs)
 
 type Rule = (Int, Int)
 
@@ -27,7 +28,8 @@ takeMiddle [a, b] = error "needs to have an odd number of elems"
 takeMiddle (a : xs) = takeMiddle (init xs)
 
 main = do
-  raw_text <- getContents
+  args <- getArgs
+  raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let rules = map (bimap read (read . tail) . break (== '|')) $ takeWhile (/= "") (lines raw_text) :: [Rule]
   let updates = map (map (read :: String -> Int) . split ',') $ tail $ dropWhile (/= "") $ lines raw_text :: [[Int]]
 

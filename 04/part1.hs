@@ -1,5 +1,6 @@
 import Data.List (find, nub, transpose)
 import Data.Maybe (fromMaybe)
+import System.Environment (getArgs)
 import Prelude hiding (Left, Right)
 
 type Grid = [[Char]]
@@ -21,4 +22,7 @@ count ('X' : 'M' : 'A' : 'S' : rest) = 1 + count rest
 count (x : xs) = count xs
 
 main :: IO ()
-main = readFile "input.txt" >>= print . sum . map count . nub . allText . lines
+main = do
+  args <- getArgs
+  raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
+  print $ sum $ map count $ nub $ allText $ lines raw_text
