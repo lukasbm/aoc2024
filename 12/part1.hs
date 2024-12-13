@@ -2,6 +2,7 @@ import Data.Array.IArray
 import Data.Array.Unboxed
 import Data.List (nub)
 import Data.Set qualified as Set
+import Debug.Trace (trace)
 import System.Environment (getArgs)
 
 type Coord = (Int, Int)
@@ -38,16 +39,15 @@ main = do
 
   -- print $ grid
   -- print $ grid ! (2, 3)
-  print $ floodFill grid [] (2, 1)
+  -- print $ floodFill grid [] (2, 1)
   print $ price $ floodFill grid [] (2, 1)
 
-  print $ solve grid
+-- print $ solve grid
 
 -- perimeter sum * area
 price :: Region -> Int
 price s = length s * sum (map snd s)
 
--- each entry is a region
 solve :: Grid -> [Int]
 solve g = map price $ go $ Set.fromList (indices g)
   where
@@ -55,16 +55,16 @@ solve g = map price $ go $ Set.fromList (indices g)
     go xs
       | Set.null xs = []
       | otherwise =
-          let reg = floodFill g (Set.elemAt 0 xs)
-           in reg : go (Set.difference xs $ Set.fromList (map fst reg)) -- go again but with region removed
+          let region = floodFill g [] (Set.elemAt 0 xs)
+           in region : go (Set.difference xs $ Set.fromList (map fst region)) -- go again but with region removed
 
 -- each neighbor that is not of the same type adds 1 to the perimeter (for this cell)
 -- out of bounds also counts as a different type
 -- less than 4 coors on getNeighbors means out of bounds -> increase perimeter
 -- result: list of coors and their perimeter
-floodFill :: Grid -> Set.Set Coord -> Coord -> [Int]
-floodFill grid allowed pos =
+floodFill :: Grid -> [Coord] -> Coord -> Region
+floodFill grid visited pos =
   let sameNeighbors = filter (\x -> grid ! x == grid ! pos) $ getNeighbors grid pos
       perimeter = 4 - length sameNeighbors
-      unvisitedNeighbors = filter (`Set.member` allowed) sameNeighbors
-   in perimeter : concatMap (floodFill grid (Set.difference allowed $ Set.fromList unvisitedNeighbors)) unvisitedNeighbors
+      unvisitedNeighbors = filter (`notElem` visited) sameNeighbors
+   in (pos, perimeter) : concatMap (floodFill grid $ [pos] ++ unvisitedNeighbors ++ visited) unvisitedNeighbors
