@@ -55,7 +55,7 @@ solve g = map price $ go $ Set.fromList (indices g)
     go xs
       | Set.null xs = []
       | otherwise =
-          let reg = floodFill g [] (Set.elemAt 0 xs)
+          let reg = floodFill g (Set.elemAt 0 xs)
            in reg : go (Set.difference xs $ Set.fromList (map fst reg)) -- go again but with region removed
 
 -- each neighbor that is not of the same type adds 1 to the perimeter (for this cell)
@@ -63,9 +63,39 @@ solve g = map price $ go $ Set.fromList (indices g)
 -- less than 4 coors on getNeighbors means out of bounds -> increase perimeter
 -- result: list of coors and their perimeter
 -- FIXME: wouldn't this cause overhead in calculation? as some subcalls might evaluate the same cell twice?
-floodFill :: Grid -> [Coord] -> Coord -> Region
+floodFill :: Grid -> Coord -> Region
 floodFill grid visited pos =
   let sameNeighbors = filter (\x -> grid ! x == grid ! pos) $ getNeighbors grid pos
       perimeter = 4 - length sameNeighbors
       unvisitedNeighbors = filter (`notElem` visited) sameNeighbors
-   in (pos, perimeter) : concatMap (floodFill grid (pos : visited)) unvisitedNeighbors
+   in (pos, perimeter) : go visited -- concatMap (floodFill grid (pos : visited)) unvisitedNeighbors
+    where
+      -- the
+      go :: [Coord] -> Coord -> Region
+
+
+
+-- a = Coord
+-- b = [(Coord, Int)]
+-- normally: foldl :: Foldable t => (b -> a -> b) -> b -> t a -> b
+-- i want: foldAlong :: Foldable t => (b -> c -> a -> (c,b)) -> t a -> t c -> b
+-- i want: foldAlong :: Foldable t => (b -> a -> b) -> (c -> a -> c) -> t a -> t c -> b
+-- with c = [Coord] (visited)
+
+-- the second function is essentially another helper to modify b 
+foldAlong :: Foldable t => (b -> c -> a -> b) -> (c -> b -> c) -> t a -> t c -> b
+foldAlong f h xs cs =
+  let
+    y = f $ head a
+    z = h $ head a
+  in
+    foldr
+
+
+-- usage
+test = foldAlong (\res vis x -> floodFill g) (\vis res -> diff vis $ map fst res) neighbors visited
+  where
+    g = null
+    visited = []
+
+-- usage2
