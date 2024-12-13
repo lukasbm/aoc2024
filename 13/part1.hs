@@ -29,15 +29,8 @@ main = do
   args <- getArgs
   raw <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let machines = parse $ lines raw
-  let m = head machines
-  let a = (listArray ((1, 1), (2, 2)) [fst $ buttonA m, fst $ buttonB m, snd $ buttonA m, snd $ buttonB m] :: Array (Int, Int) Int)
-  let b = (8400, 5400)
-  print $ a
-  print $ b
-  print $ solveSOE a b
-
--- print $ solveMachine $ head machines
--- print $ calcPrice $ solveMachine $ head machines
+  -- print $ map solveMachine machines
+  print $ sum $ map (calcPrice . solveMachine) machines
 
 calcPrice :: Maybe (Int, Int) -> Int
 calcPrice (Just (a, b)) = 3 * a + b
@@ -62,12 +55,15 @@ solveMachine m =
       matrix = listArray ((1, 1), (2, 2)) [fst $ buttonA m, fst $ buttonB m, snd $ buttonA m, snd $ buttonB m] :: Array (Int, Int) Int
       -- det = a11 a22 - a12 a21
       determinant = (matrix ! (1, 1)) * (matrix ! (2, 2)) - (matrix ! (1, 2)) * (matrix ! (2, 1))
-   in if determinant == 0
+      solution = solveSOE matrix (prize m)
+   in if determinant == 0 || fst solution > 100 || snd solution > 100
         then Nothing
-        else Just $ solveSOE matrix (prize m)
+        else Just solution
 
 -- solve a 2x2 system of equations
 -- find x in ax=b
+-- in case the column vectors of a are linearly dependent, we only solve the equations for button B as it is cheaper
+-- in the input there are no values of 0, so we don't need to handle that case.
 solveSOE :: Array (Int, Int) Int -> (Int, Int) -> (Int, Int)
 solveSOE a b =
   let -- mult first eq by a21 and second eq by a11
@@ -78,4 +74,12 @@ solveSOE a b =
       res_diff = abs $ snd new_b - fst new_b
       x2 = res_diff `div` eq_diff
       x1 = (fst b - (a ! (1, 2) * x2)) `div` a ! (1, 1)
-   in (abs x1, abs x2)
+      -- case linearly dependent
+      linearlyDependent = gcd (a ! (1, 1)) (a ! (1, 2)) /= 1 && gcd (a ! (2, 1)) (a ! (2, 2)) /= 1
+      -- only solve for b
+      x1_simple = fst b `div` (a ! (1, 2))
+      x2_simple = snd b `div` (a ! (2, 2))
+   in if linearlyDependent then (abs x1_simple, abs x2_simple) else (abs x1, abs x2)
+
+-- FIXME: 32840 too low!
+-- FIXME: 40576 too high!
