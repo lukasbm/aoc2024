@@ -1,5 +1,6 @@
 import Data.Array
 import Data.Char (isDigit)
+import Debug.Trace (trace)
 import System.Environment (getArgs)
 
 -- X and Y moves
@@ -28,9 +29,12 @@ main = do
   args <- getArgs
   raw <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let machines = parse $ lines raw
-  print $ head machines
   let m = head machines
-  print $ (listArray ((1, 1), (2, 2)) [fst $ buttonA m, fst $ buttonB m, snd $ buttonA m, snd $ buttonB m] :: Array (Int, Int) Int)
+  let a = (listArray ((1, 1), (2, 2)) [fst $ buttonA m, fst $ buttonB m, snd $ buttonA m, snd $ buttonB m] :: Array (Int, Int) Int)
+  let b = (8400, 5400)
+  print $ a
+  print $ b
+  print $ solveSOE a b
 
 -- print $ solveMachine $ head machines
 -- print $ calcPrice $ solveMachine $ head machines
@@ -60,4 +64,18 @@ solveMachine m =
       determinant = (matrix ! (1, 1)) * (matrix ! (2, 2)) - (matrix ! (1, 2)) * (matrix ! (2, 1))
    in if determinant == 0
         then Nothing
-        else Just (1, 1)
+        else Just $ solveSOE matrix (prize m)
+
+-- solve a 2x2 system of equations
+-- find x in ax=b
+solveSOE :: Array (Int, Int) Int -> (Int, Int) -> (Int, Int)
+solveSOE a b =
+  let -- mult first eq by a21 and second eq by a11
+      new_a = listArray (bounds a) [a ! (1, 1) * a ! (2, 1), a ! (1, 2) * a ! (2, 1), a ! (2, 1) * a ! (1, 1), a ! (2, 2) * a ! (1, 1)]
+      new_b = (fst b * a ! (2, 1), snd b * a ! (1, 1))
+      -- take the difference of equations. first term eliminates x1
+      eq_diff = abs $ new_a ! (2, 2) - new_a ! (1, 2)
+      res_diff = abs $ snd new_b - fst new_b
+      x2 = res_diff `div` eq_diff
+      x1 = (fst b - (a ! (1, 2) * x2)) `div` a ! (1, 1)
+   in (abs x1, abs x2)
