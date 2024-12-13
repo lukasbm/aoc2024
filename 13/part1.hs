@@ -52,34 +52,27 @@ calcPrice Nothing = 0
 solveMachine :: Machine -> Maybe (Int, Int)
 solveMachine m =
   let -- matrix = a11 = A.X , a12 = B.X , a21 = A.Y , a22 = B.Y
-      matrix = listArray ((1, 1), (2, 2)) [fst $ buttonA m, fst $ buttonB m, snd $ buttonA m, snd $ buttonB m] :: Array (Int, Int) Int
-      -- det = a11 a22 - a12 a21
-      determinant = (matrix ! (1, 1)) * (matrix ! (2, 2)) - (matrix ! (1, 2)) * (matrix ! (2, 1))
-      solution = solveSOE matrix (prize m)
-   in if fst solution > 100 || snd solution > 100
+      a = listArray ((1, 1), (2, 2)) [fromIntegral $ fst (buttonA m), fromIntegral $ fst (buttonB m), fromIntegral $ snd (buttonA m), fromIntegral $ snd (buttonB m)] :: Array (Int, Int) Double
+      det_a = determinant a
+      a1 = listArray (bounds a) [fromIntegral $ fst $ prize m, a ! (1, 2), fromIntegral $ snd $ prize m, a ! (2, 2)] :: Array (Int, Int) Double
+      a2 = listArray (bounds a) [a ! (1, 1), fromIntegral $ fst $ prize m, a ! (2, 1), fromIntegral $ snd $ prize m] :: Array (Int, Int) Double
+      det_a1 = determinant a1
+      det_a2 = determinant a2
+      -- determinant_inv = 1 `div` determinant
+      -- matrix_inv = listArray (bounds matrix) [determinant_inv * matrix ! (2, 2), -(determinant_inv * matrix ! (1, 2)), -(determinant_inv * matrix ! (2, 1)), determinant_inv * matrix ! (1, 1)]
+      -- determinant is never 0 in the input ...
+      x1 = det_a1 / det_a
+      x2 = det_a2 / det_a
+   in if x1 > 100 || x2 > 100
         then Nothing
-        else Just solution
+        else Just (round x1, round x2)
 
--- solve a 2x2 system of equations
--- find x in ax=b
--- in case the column vectors of a are linearly dependent, we only solve the equations for button B as it is cheaper
--- in the input there are no values of 0, so we don't need to handle that case.
-solveSOE :: Array (Int, Int) Int -> (Int, Int) -> (Int, Int)
-solveSOE a b =
-  let -- mult first eq by a21 and second eq by a11
-      new_a = listArray (bounds a) [a ! (1, 1) * a ! (2, 1), a ! (1, 2) * a ! (2, 1), a ! (2, 1) * a ! (1, 1), a ! (2, 2) * a ! (1, 1)]
-      new_b = (fst b * a ! (2, 1), snd b * a ! (1, 1))
-      -- take the difference of equations. first term eliminates x1
-      eq_diff = abs $ new_a ! (2, 2) - new_a ! (1, 2)
-      res_diff = abs $ snd new_b - fst new_b
-      x2 = res_diff `div` eq_diff
-      x1 = (fst b - (a ! (1, 2) * x2)) `div` a ! (1, 1)
-      -- case linearly dependent
-      linearlyDependent = gcd (a ! (1, 1)) (a ! (1, 2)) /= 1 && gcd (a ! (2, 1)) (a ! (2, 2)) /= 1
-      -- only solve for b
-      x1_simple = fst b `div` (a ! (1, 2))
-      x2_simple = snd b `div` (a ! (2, 2))
-   in if linearlyDependent then (abs x1_simple, abs x2_simple) else (abs x1, abs x2)
+-- det = a11 a22 - a12 a21
+determinant :: (Num a) => Array (Int, Int) a -> a
+determinant matrix = (matrix ! (1, 1)) * (matrix ! (2, 2)) - (matrix ! (1, 2)) * (matrix ! (2, 1))
 
 -- FIXME: 32840 too low!
 -- FIXME: 40576 too high!
+-- FIXME: 33501 is wrong!
+-- FIXME: 39646 is wrong!
+-- FIXME: 39675 is wrong!
