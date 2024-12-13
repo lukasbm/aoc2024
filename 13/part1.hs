@@ -52,27 +52,21 @@ calcPrice Nothing = 0
 solveMachine :: Machine -> Maybe (Int, Int)
 solveMachine m =
   let -- matrix = a11 = A.X , a12 = B.X , a21 = A.Y , a22 = B.Y
-      a = listArray ((1, 1), (2, 2)) [fromIntegral $ fst (buttonA m), fromIntegral $ fst (buttonB m), fromIntegral $ snd (buttonA m), fromIntegral $ snd (buttonB m)] :: Array (Int, Int) Double
+      a = listArray ((1, 1), (2, 2)) [fst (buttonA m), fst (buttonB m), snd (buttonA m), snd (buttonB m)] :: Array (Int, Int) Int
       det_a = determinant a
-      a1 = listArray (bounds a) [fromIntegral $ fst $ prize m, a ! (1, 2), fromIntegral $ snd $ prize m, a ! (2, 2)] :: Array (Int, Int) Double
-      a2 = listArray (bounds a) [a ! (1, 1), fromIntegral $ fst $ prize m, a ! (2, 1), fromIntegral $ snd $ prize m] :: Array (Int, Int) Double
+      a1 = listArray (bounds a) [fst $ prize m, a ! (1, 2), snd $ prize m, a ! (2, 2)] :: Array (Int, Int) Int
+      a2 = listArray (bounds a) [a ! (1, 1), fst $ prize m, a ! (2, 1), snd $ prize m] :: Array (Int, Int) Int
       det_a1 = determinant a1
       det_a2 = determinant a2
       -- determinant_inv = 1 `div` determinant
       -- matrix_inv = listArray (bounds matrix) [determinant_inv * matrix ! (2, 2), -(determinant_inv * matrix ! (1, 2)), -(determinant_inv * matrix ! (2, 1)), determinant_inv * matrix ! (1, 1)]
       -- determinant is never 0 in the input ...
-      x1 = det_a1 / det_a
-      x2 = det_a2 / det_a
-   in if x1 > 100 || x2 > 100
+      (x1, r1) = det_a1 `divMod` det_a
+      (x2, r2) = det_a2 `divMod` det_a
+   in if x1 > 100 || x2 > 100 || r1 /= 0 || r2 /= 0
         then Nothing
-        else Just (round x1, round x2)
+        else Just (x1, x2)
 
 -- det = a11 a22 - a12 a21
-determinant :: (Num a) => Array (Int, Int) a -> a
+determinant :: (Integral a) => Array (Int, Int) a -> a
 determinant matrix = (matrix ! (1, 1)) * (matrix ! (2, 2)) - (matrix ! (1, 2)) * (matrix ! (2, 1))
-
--- FIXME: 32840 too low!
--- FIXME: 40576 too high!
--- FIXME: 33501 is wrong!
--- FIXME: 39646 is wrong!
--- FIXME: 39675 is wrong!
