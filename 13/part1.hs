@@ -1,3 +1,4 @@
+import Data.Array
 import Data.Char (isDigit)
 import System.Environment (getArgs)
 
@@ -27,9 +28,12 @@ main = do
   args <- getArgs
   raw <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let machines = parse $ lines raw
-  print machines
-  print $ solveMachine $ head machines
-  print $ calcPrice $ solveMachine $ head machines
+  print $ head machines
+  let m = head machines
+  print $ (listArray ((1, 1), (2, 2)) [fst $ buttonA m, fst $ buttonB m, snd $ buttonA m, snd $ buttonB m] :: Array (Int, Int) Int)
+
+-- print $ solveMachine $ head machines
+-- print $ calcPrice $ solveMachine $ head machines
 
 calcPrice :: Maybe (Int, Int) -> Int
 calcPrice (Just (a, b)) = 3 * a + b
@@ -40,5 +44,20 @@ calcPrice Nothing = 0
 -- don't press more than 100 buttons on any machine.
 -- not all claw machines are solvable!
 -- returns Just (number of a presses, number of b presses) or Nothing if unsolvable
+--
+-- the task is a simple linear system of equations
+-- A.X * a + B.X * b = P.X
+-- A.Y * a + B.Y * b = P.Y
+-- A.X means the X move on button A for that machine
+--
+-- we don't have to integrate the costs into the system of equations,
+-- as there is either exactly one solution (if det != 0) or no solution.
 solveMachine :: Machine -> Maybe (Int, Int)
-solveMachine m = Nothing
+solveMachine m =
+  let -- matrix = a11 = A.X , a12 = B.X , a21 = A.Y , a22 = B.Y
+      matrix = listArray ((1, 1), (2, 2)) [fst $ buttonA m, fst $ buttonB m, snd $ buttonA m, snd $ buttonB m] :: Array (Int, Int) Int
+      -- det = a11 a22 - a12 a21
+      determinant = (matrix ! (1, 1)) * (matrix ! (2, 2)) - (matrix ! (1, 2)) * (matrix ! (2, 1))
+   in if determinant == 0
+        then Nothing
+        else Just (1, 1)
