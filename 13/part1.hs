@@ -56,7 +56,7 @@ solveMachine m =
       -- det = a11 a22 - a12 a21
       determinant = (matrix ! (1, 1)) * (matrix ! (2, 2)) - (matrix ! (1, 2)) * (matrix ! (2, 1))
       solution = solveSOE matrix (prize m)
-   in if determinant == 0 || fst solution > 100 || snd solution > 100
+   in if fst solution > 100 || snd solution > 100
         then Nothing
         else Just solution
 
