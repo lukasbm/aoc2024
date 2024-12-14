@@ -40,9 +40,8 @@ main = do
   -- print $ grid
   -- print $ grid ! (2, 3)
   -- print $ floodFill grid [] (2, 1)
-  print $ price $ floodFill grid [] (2, 1)
-
--- print $ solve grid
+  -- print $ floodFill grid [] (2, 1)
+  print $ sum $ solve grid
 
 -- perimeter sum * area
 price :: Region -> Int
@@ -67,4 +66,26 @@ floodFill grid visited pos =
   let sameNeighbors = filter (\x -> grid ! x == grid ! pos) $ getNeighbors grid pos
       perimeter = 4 - length sameNeighbors
       unvisitedNeighbors = filter (`notElem` visited) sameNeighbors
-   in (pos, perimeter) : concatMap (floodFill grid $ [pos] ++ unvisitedNeighbors ++ visited) unvisitedNeighbors
+   in (pos, perimeter) : foldAlong (\acc visited neigh -> acc ++ floodFill grid visited neigh) (\vs lastRes -> vs ++ map fst lastRes) [] unvisitedNeighbors (unvisitedNeighbors ++ [pos] ++ visited)
+
+-- old attempt ----- (pos, perimeter) concatMap (floodFill grid $ [pos] ++ unvisitedNeighbors ++ visited) unvisitedNeighbors
+
+-- a = Coord
+-- result accumulator: b = [(Coord, Int)]
+-- helper c = [Coord] (visited)
+-- the second function is essentially another helper to modify b
+-- example usage:
+-- print $ foldAlong (\acc helper x -> if x `elem` helper then acc else acc + x) const 0 [1 .. 5] [3]
+-- add ups 1 to 5 except 3
+-- very contrived example
+foldAlong :: (b -> c -> a -> b) -> (c -> b -> c) -> b -> [a] -> c -> b
+foldAlong _ _ acc [] _ = acc
+foldAlong f h acc (x : xs) cs =
+  let y = f acc cs x
+   in foldAlong f h y xs (h cs y)
+
+-- usage
+-- test = foldAlong (\res vis x -> floodFill g) (\vis res -> diff vis $ map fst res) neighbors visited
+--   where
+--     g = null
+--     visited = []
