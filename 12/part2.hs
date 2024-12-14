@@ -9,9 +9,6 @@ type Coord = (Int, Int)
 
 type Grid = UArray Coord Char
 
--- coords and perimeter values of each cell in a region
-type Region = [(Coord, Int)]
-
 -- Convert 2D list to UArray
 toUArray :: [[Char]] -> Grid
 toUArray xs = array bounds elements
@@ -32,6 +29,10 @@ getNeighbors grid (i, j) =
       potentialNeighbors = [(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]
    in filter (\(i, j) -> i >= minI && i <= maxI && j >= minJ && j <= maxJ) potentialNeighbors
 
+-- neighbors in 4 directions with no bounds check
+getStupidNeighbors :: Grid -> Coord -> [Coord]
+getStupidNeighbors grid (i, j) = [(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]
+
 main = do
   args <- getArgs
   raw_text <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
@@ -39,34 +40,50 @@ main = do
 
   -- print $ grid
   -- print $ grid ! (2, 3)
-  -- print $ floodFill grid [] (2, 1)
-  -- print $ floodFill grid [] (2, 1)
-  print $ sum $ solve grid
+  print $ floodFill grid [] (2, 1)
+  print $ price grid $ floodFill grid [] (2, 1)
 
--- perimeter sum * area
-price :: Region -> Int
-price s = length s * sum (map snd s)
+-- print $ solve grid
+
+-- price = number of sides * area = number of corners * area
+price :: Grid -> [Coord] -> Int
+price g s =
+  let area = length s
+      sides = sum (map (corners g s) s)
+   in area * sides
+
+-- number of valid corners at on position in a region
+-- assumes that x `elem` region
+corners :: Grid -> [Coord] -> Coord -> Int
+corners g region x =
+  let neigh = getNeighbors g x
+      -- diff is between 0 and 4 long
+      diff = Set.toList $ Set.difference (Set.fromList neigh) (Set.fromList region)
+      diff_pairs = (,head diff) <$> tail diff
+   in  length $ filter inLine diff_pairs
+  where
+    inLine :: (Coord, Coord) -> Bool
+    inLine ((a1, a2), (b1, b2)) = b1 - a1 == 0 || b2 - a2 == 0
 
 solve :: Grid -> [Int]
-solve g = map price $ go $ Set.fromList (indices g)
+solve g = map (price g) $ go $ Set.fromList (indices g)
   where
-    go :: Set.Set Coord -> [Region]
+    go :: Set.Set Coord -> [[Coord]]
     go xs
       | Set.null xs = []
       | otherwise =
           let region = floodFill g [] (Set.elemAt 0 xs)
-           in region : go (Set.difference xs $ Set.fromList (map fst region)) -- go again but with region removed
+           in region : go (Set.difference xs $ Set.fromList region) -- go again but with region removed
 
 -- each neighbor that is not of the same type adds 1 to the perimeter (for this cell)
 -- out of bounds also counts as a different type
 -- less than 4 coors on getNeighbors means out of bounds -> increase perimeter
 -- result: list of coors and their perimeter
-floodFill :: Grid -> [Coord] -> Coord -> Region
+floodFill :: Grid -> [Coord] -> Coord -> [Coord]
 floodFill grid visited pos =
   let sameNeighbors = filter (\x -> grid ! x == grid ! pos) $ getNeighbors grid pos
-      perimeter = 4 - length sameNeighbors
       unvisitedNeighbors = filter (`notElem` visited) sameNeighbors
-   in (pos, perimeter) : foldAlong (\acc visited neigh -> acc ++ floodFill grid visited neigh) (\vs lastRes -> vs ++ map fst lastRes) [] unvisitedNeighbors (unvisitedNeighbors ++ [pos] ++ visited)
+   in pos : foldAlong (\acc visited neigh -> acc ++ floodFill grid visited neigh) (++) [] unvisitedNeighbors (unvisitedNeighbors ++ [pos] ++ visited)
 
 -- old attempt ----- (pos, perimeter) concatMap (floodFill grid $ [pos] ++ unvisitedNeighbors ++ visited) unvisitedNeighbors
 
