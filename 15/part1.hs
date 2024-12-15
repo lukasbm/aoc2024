@@ -1,4 +1,5 @@
 import Data.Array
+import Debug.Trace (trace)
 import System.Environment (getArgs)
 import Prelude hiding (Left, Right)
 
@@ -44,9 +45,9 @@ instance Show Move where
 
 parseStep :: Char -> Move
 parseStep '<' = Left
-parseStep 'v' = Down
 parseStep '>' = Right
 parseStep '^' = Up
+parseStep 'v' = Down
 
 -- Function to get indices that match a condition
 -- explanation:
@@ -62,21 +63,20 @@ main = do
   let warehouse = parseWarehouse warehouse_raw
   let moves = map parseStep $ concat $ tail moves_raw
   let robot_pos = head $ filterIndices (== Robot) warehouse
-  putStrLn $ prettyPrint $ warehouse
   print moves
   print robot_pos
-
--- let warehouse_cleaned = foldl step warehouse moves
--- print warehouse_cleaned
+  print "warehouse initial"
+  putStrLn $ prettyPrint $ warehouse
+  -- let warehouse_cleaned = foldl step warehouse moves
+  -- print warehouse_cleaned
+  let steps = 1
+  let warehouse_moved = foldl (\(robot_pos, w) move -> trace ("doing a move: " <> show move <> " on pos " <> show robot_pos) $ step w move robot_pos) (robot_pos, warehouse) (take steps moves)
+  print $ "warehouse after" <> show steps <> " moves"
+  putStrLn $ prettyPrint $ snd warehouse_moved
 
 coordinates :: Warehouse -> [Int]
 coordinates g = map (\(x, y) -> x + 100 * y) $ filterIndices (== Box) g
 
--- pushBoxes :: Warehouse -> Coord -> Move -> Warehouse
--- pushBoxes w pos m =
-
--- FIXME: finding the robot every time might be a bit slow.
--- Use state monad to keep track across calls? or just add pos param and make the result (Coord, Warehouse)
 step :: Warehouse -> Move -> Coord -> (Coord, Warehouse)
 step warehouse move robot_pos
   | warehouse ! next_robot_pos == Wall = (robot_pos, warehouse)
