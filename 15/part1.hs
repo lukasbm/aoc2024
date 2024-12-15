@@ -28,11 +28,11 @@ parseWarehouseCell 'O' = Box
 parseWarehouseCell '.' = Free
 parseWarehouseCell c = error $ "invalid cell: " <> show c
 
-prettyPrint :: Array (Int, Int) Char -> String
+prettyPrint :: Array (Int, Int) WarehouseCell -> String
 prettyPrint arr =
   let ((rowStart, colStart), (rowEnd, colEnd)) = bounds arr
       rows = [[arr ! (r, c) | c <- [colStart .. colEnd]] | r <- [rowStart .. rowEnd]]
-   in unlines $ map (unwords . map (: [])) rows
+   in unlines $ map ((unwords . map (: [])) . map (head . show)) rows
 
 data Move = Left | Right | Up | Down deriving (Eq)
 
@@ -61,10 +61,13 @@ main = do
   let (warehouse_raw, moves_raw) = break (== "") $ lines raw
   let warehouse = parseWarehouse warehouse_raw
   let moves = map parseStep $ concat $ tail moves_raw
-  print warehouse
+  let robot_pos = head $ filterIndices (== Robot) warehouse
+  putStrLn $ prettyPrint $ warehouse
   print moves
-  let warehouse_cleaned = foldl step warehouse moves
-  print warehouse_cleaned
+  print robot_pos
+
+-- let warehouse_cleaned = foldl step warehouse moves
+-- print warehouse_cleaned
 
 coordinates :: Warehouse -> [Int]
 coordinates g = map (\(x, y) -> x + 100 * y) $ filterIndices (== Box) g
@@ -74,30 +77,29 @@ coordinates g = map (\(x, y) -> x + 100 * y) $ filterIndices (== Box) g
 
 -- FIXME: finding the robot every time might be a bit slow.
 -- Use state monad to keep track across calls? or just add pos param and make the result (Coord, Warehouse)
-step :: Warehouse -> Move -> Warehouse
-step warehouse move
-  | nextPos move robot_pos == Wall = warehouse
-  | nextPos move robot_pos == Free = moveRobot warehouse
-  | nextPos move robot_pos == Box && canPush = moveRobot $ pushBoxes warehouse (nextPos move robot_pos) 
-  | otherwise = warehouse
+step :: Warehouse -> Move -> Coord -> (Coord, Warehouse)
+step warehouse move robot_pos
+  | warehouse ! next_robot_pos == Wall = (robot_pos, warehouse)
+  | warehouse ! next_robot_pos == Free = (next_robot_pos, moveRobot warehouse)
+  | warehouse ! next_robot_pos == Box && canPush = (next_robot_pos, moveRobot $ pushBoxes warehouse move next_robot_pos)
+  | otherwise = (robot_pos, warehouse)
   where
-    robot_pos = head $ filterIndices (== Robot) w
-    canPush == last (directionCells m robot_pos) == Free
+    next_robot_pos = nextPos move robot_pos
+    canPush = last (directionCells move robot_pos) == Free
 
     directionCells :: Move -> Coord -> [WarehouseCell]
-    directionCells dir pos = if w ! nextPos dir pos == Wall then [w ! pos] else (w ! pos) : directionCells dir (nextPos dir pos)
+    directionCells dir pos = if warehouse ! nextPos dir pos == Wall then [warehouse ! pos] else (warehouse ! pos) : directionCells dir (nextPos dir pos)
 
     pushBoxes :: Warehouse -> Move -> Coord -> Warehouse
     pushBoxes w m pos
       | w ! pos == Free = w
-      | (pushBoxes w  m  new_pos) // [(pos, Free), (new_pos, Box)]
+      | otherwise = pushBoxes w m new_pos // [(pos, Free), (new_pos, Box)]
       where
         new_pos = nextPos m pos
 
     -- assumes the next pos is free!!
     moveRobot :: Warehouse -> Warehouse
-    moveRobot w = w // [(robot_pos, Free), (nextPos m robot_pos, Robot)]
-
+    moveRobot w = w // [(robot_pos, Free), (nextPos move robot_pos, Robot)]
 
 nextPos :: Move -> Coord -> Coord
 nextPos Up (x, y) = (x, y - 1)
