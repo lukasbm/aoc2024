@@ -20,7 +20,7 @@ parseWarehouse :: [[Char]] -> Warehouse
 parseWarehouse c =
   let height = length c
       width = length $ head c
-   in listArray ((0, 0), (width - 1, height - 1)) $ map parseWarehouseCell (concat c)
+   in listArray ((0, 0), (width - 1, height - 1)) $ map parseWarehouseCell (concat c) -- FIXME: swap width and height??
 
 parseWarehouseCell :: Char -> WarehouseCell
 parseWarehouseCell '@' = Robot
@@ -33,7 +33,7 @@ prettyPrint :: Array (Int, Int) WarehouseCell -> String
 prettyPrint arr =
   let ((rowStart, colStart), (rowEnd, colEnd)) = bounds arr
       rows = [[arr ! (r, c) | c <- [colStart .. colEnd]] | r <- [rowStart .. rowEnd]]
-   in unlines $ map ((unwords . map (: [])) . map (head . show)) rows
+   in unlines $ map (concatMap ((: []) . head . show)) rows
 
 data Move = Left | Right | Up | Down deriving (Eq)
 
@@ -66,10 +66,10 @@ main = do
   print moves
   print robot_pos
   print "warehouse initial"
+  -- print $ warehouse ! (2, 1)
+  -- print $ warehouse ! (1, 2)
   putStrLn $ prettyPrint $ warehouse
-  -- let warehouse_cleaned = foldl step warehouse moves
-  -- print warehouse_cleaned
-  let steps = 1
+  let steps = 7
   let warehouse_moved = foldl (\(robot_pos, w) move -> trace ("doing a move: " <> show move <> " on pos " <> show robot_pos) $ step w move robot_pos) (robot_pos, warehouse) (take steps moves)
   print $ "warehouse after" <> show steps <> " moves"
   putStrLn $ prettyPrint $ snd warehouse_moved
@@ -102,7 +102,7 @@ step warehouse move robot_pos
     moveRobot w = w // [(robot_pos, Free), (nextPos move robot_pos, Robot)]
 
 nextPos :: Move -> Coord -> Coord
-nextPos Up (x, y) = (x, y - 1)
-nextPos Down (x, y) = (x, y + 1)
-nextPos Left (x, y) = (x - 1, y)
-nextPos Right (x, y) = (x + 1, y)
+nextPos Up (y, x) = (y - 1, x)
+nextPos Down (y, x) = (y + 1, x)
+nextPos Left (y, x) = (y, x - 1)
+nextPos Right (y, x) = (y, x + 1)
