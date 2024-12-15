@@ -1,31 +1,33 @@
 import Data.Array (Array, array, range)
+import Data.Char (isDigit)
 import Debug.Trace (trace)
 import System.Environment (getArgs)
 
-data Cell = Free | Robots Int deriving (Eq, Ord)
-
-instance Show Cell where
-  show Free = "."
-  show (Robots a) = show a
-
 type Coord = (Int, Int)
 
-type Grid = Array Coord Cell
+data Robot = Robot {pos :: Coord, vel :: Coord} deriving (Eq, Show)
 
-parseCell :: Char -> Cell
-parseCell '.' = Free
-parseCell c = Robots (read [c])
+atoi :: String -> Int
+atoi "" = error "empty string"
+atoi x = read $ filter isDigit x
 
-toArray :: [[a]] -> Array Coord a
-toArray xss =
-  let rows = length xss
-      cols = if null xss then 0 else length (head xss)
-      bounds = ((0, 0), (rows - 1, cols - 1))
-      elems = concat xss
-   in array bounds (zip (range bounds) elems)
+parseRobot :: String -> Robot
+parseRobot r =
+  let (p, v) = break (== ' ') r
+      (px, py) = break (== ',') p
+      (vx, vy) = break (== ',') v
+   in Robot (atoi px, atoi py) (atoi vx, atoi vy)
+
+-- we index (x,y), where x is number of tile from the left wall and y is number of rows from the top!
+-- positive x means moving right, positive y means moving down
 
 main = do
   args <- getArgs
   raw <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
-  let grid = (map . map) parseCell (lines raw)
-  print $ toArray $ grid
+  let size = if head args == "input.txt" then (101, 103) else (11, 7) :: Coord
+  let robots = map parseRobot (lines raw)
+  -- print $ robots
+  print $ size
+
+step :: [Robot] -> [Robot]
+step rs = []
