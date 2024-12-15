@@ -27,16 +27,16 @@ parseRobot r =
 -- grid is 0 indexed!
 
 visualizeRobots :: Coord -> [Robot] -> Array Coord Char
-visualizeRobots (width, height) robots = array ((0, 0), (width - 1, height - 1)) [((x, y), if (x, y) `elem` map pos robots then '*' else '.') | x <- [0 .. width - 1], y <- [0 .. height - 1]]
+visualizeRobots (width, height) robots = array ((0, 0), (width - 1, height - 1)) [((x, y), if (x, y) `elem` map pos robots then '■' else '.') | x <- [0 .. width - 1], y <- [0 .. height - 1]]
 
 main = do
   args <- getArgs
   raw <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
   let size = if head args == "input.txt" then (101, 103) else (11, 7) :: Coord
   let robots = map parseRobot (lines raw)
-  -- let robots_moved = map visualizeRobots $ take 10 $ iterate (step size) robots
-  -- print $ robots
-  putStrLn $ prettyPrint $ visualizeRobots size robots
+  let robots_moved = take 100 $ iterate (step size) robots
+  let robots_moved_pretty = map (prettyPrint . visualizeRobots size) robots_moved
+  putStrLn $ concat $ zipWith (\x i -> "after steps: " <> show i <> "\n" <> x) robots_moved_pretty [0 ..]
 
 -- moves the robot according to its own velocity
 -- will wrap around the grid if border is reached!
