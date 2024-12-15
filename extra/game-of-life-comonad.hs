@@ -52,6 +52,8 @@ neighborCoords =
     (1, 1)
   ]
 
+-- This is where it gets interesting
+
 -- | Count how many of the 8 neighbors are alive
 countAliveNeighbors w = length $ filter id $ map (\(dr, dc) -> peek (shift dr dc (pos w)) w) neighborCoords
   where

@@ -16,6 +16,9 @@ import Data.Functor.Identity (Identity (..))
 import Data.Functor.Rep (Representable (..), distributeRep)
 import Data.Vector (Vector, generate, (!))
 
+-- this is another example of comonads, but using vecotrs to represent an infinite grid!
+
+
 tickTime :: Int
 tickTime = 200000
 
