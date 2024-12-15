@@ -69,6 +69,38 @@ main = do
 coordinates :: Warehouse -> [Int]
 coordinates g = map (\(x, y) -> x + 100 * y) $ filterIndices (== Box) g
 
--- TODO: here
+-- pushBoxes :: Warehouse -> Coord -> Move -> Warehouse
+-- pushBoxes w pos m =
+
+-- FIXME: finding the robot every time might be a bit slow.
+-- Use state monad to keep track across calls? or just add pos param and make the result (Coord, Warehouse)
 step :: Warehouse -> Move -> Warehouse
-step w m = w
+step warehouse move
+  | nextPos move robot_pos == Wall = warehouse
+  | nextPos move robot_pos == Free = moveRobot warehouse
+  | nextPos move robot_pos == Box && canPush = moveRobot $ pushBoxes warehouse (nextPos move robot_pos) 
+  | otherwise = warehouse
+  where
+    robot_pos = head $ filterIndices (== Robot) w
+    canPush == last (directionCells m robot_pos) == Free
+
+    directionCells :: Move -> Coord -> [WarehouseCell]
+    directionCells dir pos = if w ! nextPos dir pos == Wall then [w ! pos] else (w ! pos) : directionCells dir (nextPos dir pos)
+
+    pushBoxes :: Warehouse -> Move -> Coord -> Warehouse
+    pushBoxes w m pos
+      | w ! pos == Free = w
+      | (pushBoxes w  m  new_pos) // [(pos, Free), (new_pos, Box)]
+      where
+        new_pos = nextPos m pos
+
+    -- assumes the next pos is free!!
+    moveRobot :: Warehouse -> Warehouse
+    moveRobot w = w // [(robot_pos, Free), (nextPos m robot_pos, Robot)]
+
+
+nextPos :: Move -> Coord -> Coord
+nextPos Up (x, y) = (x, y - 1)
+nextPos Down (x, y) = (x, y + 1)
+nextPos Left (x, y) = (x - 1, y)
+nextPos Right (x, y) = (x + 1, y)
