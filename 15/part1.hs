@@ -28,6 +28,12 @@ parseWarehouseCell 'O' = Box
 parseWarehouseCell '.' = Free
 parseWarehouseCell c = error $ "invalid cell: " <> show c
 
+prettyPrint :: Array (Int, Int) Char -> String
+prettyPrint arr =
+  let ((rowStart, colStart), (rowEnd, colEnd)) = bounds arr
+      rows = [[arr ! (r, c) | c <- [colStart .. colEnd]] | r <- [rowStart .. rowEnd]]
+   in unlines $ map (unwords . map (: [])) rows
+
 data Move = Left | Right | Up | Down deriving (Eq)
 
 instance Show Move where
@@ -42,6 +48,13 @@ parseStep 'v' = Down
 parseStep '>' = Right
 parseStep '^' = Up
 
+-- Function to get indices that match a condition
+-- explanation:
+-- assocs: Extracts all (index, value) pairs from the array.
+-- then we apply the predicate
+filterIndices :: (Ix i) => (e -> Bool) -> Array i e -> [i]
+filterIndices predicate arr = [idx | (idx, val) <- assocs arr, predicate val]
+
 main = do
   args <- getArgs
   raw <- if length args == 1 then readFile (head args) else error "usage: ./program <file>"
@@ -50,3 +63,12 @@ main = do
   let moves = map parseStep $ concat $ tail moves_raw
   print warehouse
   print moves
+  let warehouse_cleaned = foldl step warehouse moves
+  print warehouse_cleaned
+
+coordinates :: Warehouse -> [Int]
+coordinates g = map (\(x, y) -> x + 100 * y) $ filterIndices (== Box) g
+
+-- TODO: here
+step :: Warehouse -> Move -> Warehouse
+step w m = w
