@@ -70,8 +70,14 @@ main = do
   print "warehouse initial"
   putStrLn $ prettyPrint $ warehouse
 
--- let warehouse_moved = snd $ foldl (\(robot_pos, w) move -> trace ("doing a move: " <> show move <> " on pos " <> show robot_pos) $ step w move robot_pos) (robot_pos, warehouse) moves
--- putStrLn $ prettyPrint $ warehouse_moved
+  let steps = 11
+  let warehouse_moved = snd $ foldl (\(robot_pos, w) move -> trace ("doing a move: " <> show move <> " on pos " <> show robot_pos) $ step w move robot_pos) (robot_pos, warehouse) (take steps moves)
+
+  print "hi"
+
+  print $ "warehouse after " <> show steps <> " steps"
+  putStrLn $ prettyPrint $ warehouse_moved
+
 -- print $ sum $ coordinates warehouse_moved
 
 coordinates :: Warehouse -> [Int]
@@ -81,7 +87,8 @@ step :: Warehouse -> Move -> Coord -> (Coord, Warehouse)
 step warehouse move robot_pos
   | warehouse ! next_robot_pos == Wall = (robot_pos, warehouse)
   | warehouse ! next_robot_pos == Free = (next_robot_pos, moveRobot warehouse)
-  | warehouse ! next_robot_pos == BoxLeft && canPush = (next_robot_pos, moveRobot $ pushBoxes warehouse move next_robot_pos)
+  | move `elem` [Up, Down] && canMoveVertical = trace ("moving the vertical boxes: " <> show moveVertical <> " in direction: " <> show move) (next_robot_pos, moveRobot $ pushBoxes moveVertical)
+  | move `elem` [Left, Right] && canMoveHorizontal = (next_robot_pos, moveRobot $ pushBoxes moveHorizontal)
   | otherwise = (robot_pos, warehouse)
   where
     next_robot_pos = nextPos move robot_pos
@@ -99,11 +106,11 @@ step warehouse move robot_pos
     verticalMovement pos =
       let ml = nextPos Left pos
           mr = nextPos Right pos
-       in case warehouse ! pos of
+       in trace ("veritcal movemvent on: " <> show pos) $ case warehouse ! pos of
             Wall -> []
             Free -> []
-            BoxLeft -> [pos] ++ verticalMovement (nextPos move mr) ++ verticalMovement (nextPos move pos)
-            BoxRight -> [pos] ++ verticalMovement (nextPos move ml) ++ verticalMovement (nextPos move pos)
+            BoxLeft -> [pos, mr] ++ verticalMovement (nextPos move mr) ++ verticalMovement (nextPos move pos)
+            BoxRight -> [pos, ml] ++ verticalMovement (nextPos move ml) ++ verticalMovement (nextPos move pos)
 
     moveVertical :: [Coord]
     moveVertical = verticalMovement next_robot_pos
@@ -123,7 +130,7 @@ step warehouse move robot_pos
     -- assumes its free!
     -- FIXME: idk if this works
     pushBoxes :: [Coord] -> Warehouse
-    pushBoxes = foldl pushCell warehouse
+    pushBoxes = foldr (flip pushCell) warehouse
 
     -- assume we are allowed to do it!
     pushCell :: Warehouse -> Coord -> Warehouse
