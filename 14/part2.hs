@@ -54,9 +54,8 @@ main = do
   let robots = map parseRobot (lines raw)
   let robots_moved = iterate (step size) robots
   let robots_moved_grid = map (visualizeRobots size) robots_moved
-  putStrLn $ head $
-      dropWhile (\(_, _, ch) -> fst ch > 500 || snd ch > 500) $
-        zip3 [0 ..] (map prettyPrint robots_moved_grid) (map chaos robots_moved_grid)
+  let result = head $ dropWhile (\(_, _, ch) -> fst ch > 500 || snd ch > 500) $ zip3 [0 ..] (map prettyPrint robots_moved_grid) (map chaos robots_moved_grid)
+  print result
 
 -- moves the robot according to its own velocity
 -- will wrap around the grid if border is reached!
