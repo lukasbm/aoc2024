@@ -1,4 +1,5 @@
 import Data.Array
+import Data.List (sortBy)
 import Debug.Trace (trace)
 import System.Environment (getArgs)
 import Prelude hiding (Left, Right)
@@ -70,24 +71,24 @@ main = do
   print "warehouse initial"
   putStrLn $ prettyPrint $ warehouse
 
-  let steps = 11
-  let warehouse_moved = snd $ foldl (\(robot_pos, w) move -> trace ("doing a move: " <> show move <> " on pos " <> show robot_pos) $ step w move robot_pos) (robot_pos, warehouse) (take steps moves)
+  let warehouse_moved = snd $ foldl (\(robot_pos, w) move -> step w move robot_pos) (robot_pos, warehouse) moves
 
-  print "hi"
-
-  print $ "warehouse after " <> show steps <> " steps"
+  print $ "warehouse after"
   putStrLn $ prettyPrint $ warehouse_moved
-
--- print $ sum $ coordinates warehouse_moved
+  -- FIXME: wrong result for example1, but correct on example 3
+  print $ sum $ coordinates warehouse_moved
 
 coordinates :: Warehouse -> [Int]
-coordinates g = map (\(y, x) -> x + 100 * y) $ filterIndices (== BoxLeft) g
+coordinates g = map coordinate $ filterIndices (== BoxLeft) g
+
+coordinate :: Coord -> Int
+coordinate (y, x) = x + 100 * y
 
 step :: Warehouse -> Move -> Coord -> (Coord, Warehouse)
 step warehouse move robot_pos
   | warehouse ! next_robot_pos == Wall = (robot_pos, warehouse)
   | warehouse ! next_robot_pos == Free = (next_robot_pos, moveRobot warehouse)
-  | move `elem` [Up, Down] && canMoveVertical = trace ("moving the vertical boxes: " <> show moveVertical <> " in direction: " <> show move) (next_robot_pos, moveRobot $ pushBoxes moveVertical)
+  | move `elem` [Up, Down] && canMoveVertical = (next_robot_pos, moveRobot $ pushBoxes moveVertical)
   | move `elem` [Left, Right] && canMoveHorizontal = (next_robot_pos, moveRobot $ pushBoxes moveHorizontal)
   | otherwise = (robot_pos, warehouse)
   where
@@ -106,7 +107,7 @@ step warehouse move robot_pos
     verticalMovement pos =
       let ml = nextPos Left pos
           mr = nextPos Right pos
-       in trace ("veritcal movemvent on: " <> show pos) $ case warehouse ! pos of
+       in case warehouse ! pos of
             Wall -> []
             Free -> []
             BoxLeft -> [pos, mr] ++ verticalMovement (nextPos move mr) ++ verticalMovement (nextPos move pos)
@@ -128,23 +129,34 @@ step warehouse move robot_pos
 
     -- first set it all to free, then replace with the new coords
     -- assumes its free!
-    -- FIXME: idk if this works
+    -- to avoid issues while writing, we need to sort the coords:
+    -- best, sort by coordinate function
     pushBoxes :: [Coord] -> Warehouse
-    pushBoxes = foldr (flip pushCell) warehouse
+    pushBoxes cs =
+      let values = [warehouse ! c | c <- cs]
+          new_cs = map (nextPos move) cs
+          warehouse_clean = warehouse // ((,Free) <$> cs)
+          warehouse_filled = warehouse_clean // zip new_cs values
+       in warehouse_filled
 
-    -- assume we are allowed to do it!
-    pushCell :: Warehouse -> Coord -> Warehouse
-    pushCell w pos =
-      let new_pos = nextPos move pos
-          el = w ! pos
-       in w // [(pos, Free), (new_pos, el)]
-
+    -- update robot position
     -- assumes the next pos is free!!
     moveRobot :: Warehouse -> Warehouse
-    moveRobot w = w // [(robot_pos, Free), (nextPos move robot_pos, Robot)]
+    moveRobot w = w // [(robot_pos, Free), (next_robot_pos, Robot)]
 
 nextPos :: Move -> Coord -> Coord
 nextPos Up (y, x) = (y - 1, x)
 nextPos Down (y, x) = (y + 1, x)
 nextPos Left (y, x) = (y, x - 1)
 nextPos Right (y, x) = (y, x + 1)
+
+shiftArray :: Array Coord a -> Move -> a -> Array Coord a
+shiftArray arr direction filler = array bnds updatedElems
+  where
+    bnds@((xmin, ymin), (xmax, ymax)) = bounds arr
+    updatedElems = [((x, y), newElem (x, y)) | x <- [xmin .. xmax], y <- [ymin .. ymax]]
+    newElem (x, y) = case direction of
+      Left -> if x == xmax then filler else arr ! (x + 1, y)
+      Right -> if x == xmin then filler else arr ! (x - 1, y)
+      Up -> if y == ymax then filler else arr ! (x, y + 1)
+      Down -> if y == ymin then filler else arr ! (x, y - 1)
