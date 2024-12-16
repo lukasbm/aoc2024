@@ -70,9 +70,9 @@ main = do
   print "warehouse initial"
   putStrLn $ prettyPrint $ warehouse
 
-  -- let warehouse_moved = snd $ foldl (\(robot_pos, w) move -> trace ("doing a move: " <> show move <> " on pos " <> show robot_pos) $ step w move robot_pos) (robot_pos, warehouse) moves
-  -- putStrLn $ prettyPrint $ warehouse_moved
-  -- print $ sum $ coordinates warehouse_moved
+-- let warehouse_moved = snd $ foldl (\(robot_pos, w) move -> trace ("doing a move: " <> show move <> " on pos " <> show robot_pos) $ step w move robot_pos) (robot_pos, warehouse) moves
+-- putStrLn $ prettyPrint $ warehouse_moved
+-- print $ sum $ coordinates warehouse_moved
 
 coordinates :: Warehouse -> [Int]
 coordinates g = map (\(y, x) -> x + 100 * y) $ filterIndices (== BoxLeft) g
@@ -85,21 +85,52 @@ step warehouse move robot_pos
   | otherwise = (robot_pos, warehouse)
   where
     next_robot_pos = nextPos move robot_pos
-    canPush = last (directionCells move next_robot_pos) == Free
 
-    -- the cells until next free or wall! (first free is still included)
-    directionCells :: Move -> Coord -> [WarehouseCell]
-    directionCells dir pos = case warehouse ! pos of
+    -- always start it on next_robot_pos!
+    horizontalMovement :: Coord -> [Coord]
+    horizontalMovement pos = case warehouse ! pos of
       Wall -> []
-      Free -> [Free]
-      BoxLeft -> BoxLeft : directionCells dir (nextPos dir pos)
+      Free -> []
+      BoxLeft -> pos : horizontalMovement (nextPos move pos)
+      BoxRight -> pos : horizontalMovement (nextPos move pos)
 
-    pushBoxes :: Warehouse -> Move -> Coord -> Warehouse
-    pushBoxes w m pos
-      | w ! pos == Free = w
-      | otherwise = pushBoxes w m new_pos // [(pos, Free), (new_pos, BoxLeft)]
-      where
-        new_pos = nextPos m pos
+    -- always start it on next_robot_pos!
+    verticalMovement :: Coord -> [Coord]
+    verticalMovement pos =
+      let ml = nextPos Left pos
+          mr = nextPos Right pos
+       in case warehouse ! pos of
+            Wall -> []
+            Free -> []
+            BoxLeft -> [pos] ++ verticalMovement (nextPos move mr) ++ verticalMovement (nextPos move pos)
+            BoxRight -> [pos] ++ verticalMovement (nextPos move ml) ++ verticalMovement (nextPos move pos)
+
+    moveVertical :: [Coord]
+    moveVertical = verticalMovement next_robot_pos
+
+    -- checks if in move direction there is no wall directly above any of the boxes i want to move vertically
+    canMoveVertical :: Bool
+    canMoveVertical = all (\pos -> (warehouse ! nextPos move pos) `elem` [Free, BoxLeft, BoxRight]) moveVertical
+
+    moveHorizontal :: [Coord]
+    moveHorizontal = horizontalMovement next_robot_pos
+
+    -- checks if in move direction there is no wall directly above any of the boxes i want to move horizontally
+    canMoveHorizontal :: Bool
+    canMoveHorizontal = all (\pos -> (warehouse ! nextPos move pos) `elem` [Free, BoxLeft, BoxRight]) moveHorizontal
+
+    -- first set it all to free, then replace with the new coords
+    -- assumes its free!
+    -- FIXME: idk if this works
+    pushBoxes :: [Coord] -> Warehouse
+    pushBoxes = foldl pushCell warehouse
+
+    -- assume we are allowed to do it!
+    pushCell :: Warehouse -> Coord -> Warehouse
+    pushCell w pos =
+      let new_pos = nextPos move pos
+          el = w ! pos
+       in w // [(pos, Free), (new_pos, el)]
 
     -- assumes the next pos is free!!
     moveRobot :: Warehouse -> Warehouse
