@@ -38,8 +38,8 @@ dijkstra src invalid_index adj_list = runST $ do
     newSTArray :: (Ix i) => (i, i) -> e -> ST s (STArray s i e)
     newSTArray = newArray
 
-shortest_path_to :: (Ix v) => v -> v -> Array v v -> [v]
-shortest_path_to target invalid_index previous =
+shortestPathTo :: (Ix v) => v -> v -> Array v v -> [v]
+shortestPathTo target invalid_index previous =
   aux target []
   where
     aux vertex acc
@@ -50,17 +50,17 @@ adjList :: Array Char [(Char, Int)]
 adjList =
   listArray
     ('a', 'f')
-    [ [('b', 7), ('c', 9), ('f', 14)],
-      [('a', 7), ('c', 10), ('d', 15)],
-      [('a', 9), ('b', 10), ('d', 11), ('f', 2)],
-      [('b', 15), ('c', 11), ('e', 6)],
-      [('d', 6), ('f', 9)],
-      [('a', 14), ('c', 2), ('e', 9)]
+    [ [('b', 7), ('c', 9), ('f', 14)], -- a
+      [('a', 7), ('c', 10), ('d', 15)], -- b
+      [('a', 9), ('b', 10), ('d', 11), ('f', 2)], -- c
+      [('b', 15), ('c', 11), ('e', 6)], -- d
+      [('d', 6), ('f', 9)], -- e
+      [('a', 14), ('c', 2), ('e', 9)] -- f
     ]
 
 main :: IO ()
 main = do
   let (min_distance, previous) = dijkstra 'a' ' ' adjList
   putStrLn $ "Distance from a to e: " ++ show (min_distance ! 'e')
-  let path = shortest_path_to 'e' ' ' previous
+  let path = shortestPathTo 'e' ' ' previous
   putStrLn $ "Path: " ++ show path
