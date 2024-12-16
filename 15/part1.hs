@@ -63,19 +63,19 @@ main = do
   let warehouse = parseWarehouse warehouse_raw
   let moves = map parseStep $ concat $ tail moves_raw
   let robot_pos = head $ filterIndices (== Robot) warehouse
+
   print moves
   print robot_pos
-  print "warehouse initial"
-  -- print $ warehouse ! (2, 1)
-  -- print $ warehouse ! (1, 2)
-  putStrLn $ prettyPrint $ warehouse
-  let steps = 7
-  let warehouse_moved = foldl (\(robot_pos, w) move -> trace ("doing a move: " <> show move <> " on pos " <> show robot_pos) $ step w move robot_pos) (robot_pos, warehouse) (take steps moves)
-  print $ "warehouse after" <> show steps <> " moves"
-  putStrLn $ prettyPrint $ snd warehouse_moved
+  -- print "warehouse initial"
+  -- putStrLn $ prettyPrint $ warehouse
+ 
+  -- FIXME: Broken with example1! (example 2 works tho!)
+  let warehouse_moved = snd $ foldl (\(robot_pos, w) move -> trace ("doing a move: " <> show move <> " on pos " <> show robot_pos) $ step w move robot_pos) (robot_pos, warehouse) moves
+  putStrLn $ prettyPrint $ warehouse_moved
+  print $ sum $ coordinates warehouse_moved
 
 coordinates :: Warehouse -> [Int]
-coordinates g = map (\(x, y) -> x + 100 * y) $ filterIndices (== Box) g
+coordinates g = map (\(y, x) -> x + 100 * y) $ filterIndices (== Box) g
 
 step :: Warehouse -> Move -> Coord -> (Coord, Warehouse)
 step warehouse move robot_pos
