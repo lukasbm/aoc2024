@@ -68,8 +68,7 @@ main = do
   print robot_pos
   -- print "warehouse initial"
   -- putStrLn $ prettyPrint $ warehouse
- 
-  -- FIXME: Broken with example1! (example 2 works tho!)
+
   let warehouse_moved = snd $ foldl (\(robot_pos, w) move -> trace ("doing a move: " <> show move <> " on pos " <> show robot_pos) $ step w move robot_pos) (robot_pos, warehouse) moves
   putStrLn $ prettyPrint $ warehouse_moved
   print $ sum $ coordinates warehouse_moved
@@ -85,10 +84,14 @@ step warehouse move robot_pos
   | otherwise = (robot_pos, warehouse)
   where
     next_robot_pos = nextPos move robot_pos
-    canPush = last (directionCells move robot_pos) == Free
+    canPush = last (directionCells move next_robot_pos) == Free
 
+    -- the cells until next free or wall! (first free is still included)
     directionCells :: Move -> Coord -> [WarehouseCell]
-    directionCells dir pos = if warehouse ! nextPos dir pos == Wall then [warehouse ! pos] else (warehouse ! pos) : directionCells dir (nextPos dir pos)
+    directionCells dir pos = case warehouse ! pos of
+      Wall -> []
+      Free -> [Free]
+      Box -> Box : directionCells dir (nextPos dir pos)
 
     pushBoxes :: Warehouse -> Move -> Coord -> Warehouse
     pushBoxes w m pos
