@@ -33,21 +33,19 @@ parseRobot r =
 visualizeRobots :: Coord -> [Robot] -> Array Coord Bool
 visualizeRobots (width, height) robots = array ((0, 0), (width - 1, height - 1)) [((x, y), (x, y) `elem` map pos robots) | x <- [0 .. width - 1], y <- [0 .. height - 1]]
 
--- | 'slidingWindow2' applies a function to every subgrid of a given size within a grid.
--- The first parameter is the size of the subgrid (number of rows and columns).
--- The second parameter is the function to apply to each subgrid.
--- The third parameter is the array to process.
-slidingWindowArray2 :: Coord -> ([a] -> b) -> Array Coord a -> [b]
-slidingWindowArray2 size@(nrow, ncol) func arr = [func $ neighbors (i, j) | i <- [0 .. width], j <- [0 .. height]]
-  where
-    ((_, _), (width, height)) = bounds arr
-    neighbors (i, j) = [val | (idx, val) <- assocs arr, idx < (i + width, j + height) && idx >= (i, j)]
+variance :: (Floating a) => [a] -> a
+variance xs =
+  let n = fromIntegral (length xs)
+      mean = sum xs / n
+   in sum [(x - mean) ^ 2 | x <- xs] / n
 
--- https://en.wikipedia.org/wiki/Indicators_of_spatial_association
-chaos :: Array Coord Bool -> Int
-chaos arr = sum $ slidingWindowArray2 (4, 4) windowChaos arr
-  where
-    windowChaos a = sum $ map b2i a
+-- could be improved using
+chaos :: Array Coord Bool -> (Double, Double)
+chaos arr =
+  let relevant_indices = [idx | (idx, val) <- assocs arr, val]
+      x = map (fromIntegral . fst) relevant_indices
+      y = map (fromIntegral . snd) relevant_indices
+   in (variance x, variance y)
 
 main = do
   args <- getArgs
@@ -56,9 +54,9 @@ main = do
   let robots = map parseRobot (lines raw)
   let robots_moved = iterate (step size) robots
   let robots_moved_grid = map (visualizeRobots size) robots_moved
-  putStrLn $
-    concatMap (\(i, pp, ch) -> "chaos after steps" <> show i <> ": " <> show ch <> "\n" <> pp) $
-      filter (\(_, _, ch) -> ch > 0) (zip3 [0 ..] (map prettyPrint robots_moved_grid) (map chaos robots_moved_grid))
+  putStrLn $ head $
+      dropWhile (\(_, _, ch) -> fst ch > 500 || snd ch > 500) $
+        zip3 [0 ..] (map prettyPrint robots_moved_grid) (map chaos robots_moved_grid)
 
 -- moves the robot according to its own velocity
 -- will wrap around the grid if border is reached!
